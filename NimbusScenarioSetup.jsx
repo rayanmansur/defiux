@@ -58,7 +58,7 @@ function NimbusScenarioSetupPanel({ visible, onClose, app }) {
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, color: NS.muted, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 10 }}>Presets</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {NIMBUS_PRESETS.filter(p => hasAave ? !p.id.startsWith('arb-') : !p.id.startsWith('base-')).map(p => (
+            {NIMBUS_PRESETS.filter(p => app === 'prototype' ? true : hasAave ? !p.id.startsWith('arb-') : !p.id.startsWith('base-')).map(p => (
               <button key={p.id} onClick={() => AppState.applyPreset(p.id)} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 background: NS.bg, border: '1px solid ' + NS.border, borderRadius: 10,

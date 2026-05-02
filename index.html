@@ -120,6 +120,51 @@
       gap: 14px;
     }
 
+    .prototype-title {
+      margin: 24px 0 12px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .prototypes {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .prototype-link {
+      min-height: 86px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .prototype-link:hover,
+    .prototype-link:focus-visible {
+      border-color: var(--blue);
+      outline: none;
+    }
+
+    .prototype-link strong {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .prototype-link span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
     .choice {
       display: flex;
       flex-direction: column;
@@ -232,7 +277,8 @@
       }
 
       .safety,
-      .choices {
+      .choices,
+      .prototypes {
         grid-template-columns: 1fr;
       }
 
@@ -308,6 +354,30 @@
           <a class="button secondary" href="/nimbus-aave.html">Nimbus wallet</a>
         </div>
       </article>
+    </section>
+
+    <div class="prototype-title">Nimbus UX alternatives</div>
+    <section class="prototypes" aria-label="Nimbus UX prototypes">
+      <a class="prototype-link" href="/nimbus-dashboard.html">
+        <strong>Full web app</strong>
+        <span>Axiom-style home for actions and miniapps.</span>
+      </a>
+      <a class="prototype-link" href="/nimbus-extension.html">
+        <strong>Action cards</strong>
+        <span>Browser-wallet sidecar with proactive routes.</span>
+      </a>
+      <a class="prototype-link" href="/nimbus-mobile.html">
+        <strong>Mobile app</strong>
+        <span>Phone-first action flow with same state.</span>
+      </a>
+      <a class="prototype-link" href="/nimbus-command.html">
+        <strong>Command palette</strong>
+        <span>Search actions, then execute the route.</span>
+      </a>
+      <a class="prototype-link" href="/nimbus-inbox.html">
+        <strong>Intent inbox</strong>
+        <span>Outcome cards that users can accept.</span>
+      </a>
     </section>
 
     <footer>

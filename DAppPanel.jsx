@@ -1,5 +1,5 @@
 // DAppPanel.jsx v2 — raw errors, Earn→admin trigger
-const { useState, useEffect, useRef, useMemo } = React;
+var { useState, useEffect, useRef, useMemo } = React;
 
 const HL = {
   bg: '#0d0e11', panel: '#13141a', border: '#1e2028', border2: '#252630',

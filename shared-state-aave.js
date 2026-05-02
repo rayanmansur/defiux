@@ -41,6 +41,7 @@
       chainSpeeds: { ...DEFAULT_SPEEDS },
       coinbaseBalance: 0,
       coinbaseHoldings: { SOL: 0, ETH: 0 },
+      hyperliquidBalance: 0,
       // Aave positions on Base
       aaveSupplied: {},   // { USDC: 10, weETH: 0.01, ... }
       aaveBorrowed: {},   // { USDC: 5, ... }
@@ -152,6 +153,11 @@
       notify();
     },
 
+    setHyperliquidBalance(val) {
+      _state.hyperliquidBalance = Math.max(0, parseFloat(val) || 0);
+      notify();
+    },
+
     // Aave supply/borrow
     aaveSupply(token, amount) {
       _state.aaveSupplied[token] = (_state.aaveSupplied[token] || 0) + amount;
@@ -236,6 +242,11 @@
       } else if (id === 'base-usdc-gas') {
         _state.balances.base.USDC = 15;
         _state.balances.base.ETH  = 0.002;
+      } else if (id === 'arb-usdc-nogas') {
+        _state.balances.arbitrum.USDC = 15;
+      } else if (id === 'arb-usdc-gas') {
+        _state.balances.arbitrum.USDC = 15;
+        _state.balances.arbitrum.ETH  = 0.002;
       } else if (id === 'base-gas-only') {
         _state.balances.base.ETH  = 0.002;
       }

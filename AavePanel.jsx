@@ -1,5 +1,5 @@
 // AavePanel.jsx — Base Market, supply + borrow, wallet-signed transactions
-const { useState, useEffect, useRef } = React;
+var { useState, useEffect, useRef } = React;
 
 const AV = {
   bg:      '#0e1016',
@@ -317,7 +317,7 @@ function SuccessToast({ msg, onClose }) {
 }
 
 // ── Supply Success Modal ───────────────────────────────────────
-function FeeSummary({ state, deliveredUsd }) {
+function AaveFeeSummary({ state, deliveredUsd }) {
   const stats = state.sessionStats || {};
   const fees = stats.fees || [];
   const totalFees = fees.reduce((sum, f) => sum + (parseFloat(f.amountUsd) || 0), 0);
@@ -369,7 +369,7 @@ function SupplySuccessModal({ amount, token, state, onClose }) {
           <div>✓ Signed supply transaction</div>
           <div>✓ Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || '—'}% APY on Waave</div>
         </div>
-        <FeeSummary state={state} deliveredUsd={deliveredUsd} />
+        <AaveFeeSummary state={state} deliveredUsd={deliveredUsd} />
         <button onClick={onClose} style={{
           padding: 14, borderRadius: 12, border: 'none',
           background: AV.grad, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',

@@ -1,5 +1,5 @@
 // CoinbasePanel.jsx — mock CeFi: deposit fiat → buy crypto → send to wallet
-const { useState, useEffect } = React;
+var { useState, useEffect } = React;
 
 const CB = {
   bg:      '#f8f9fa',
