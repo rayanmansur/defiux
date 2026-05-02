@@ -3,38 +3,294 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DeFi Simulator — Cross-chain Flow</title>
+  <title>DeFi Simulator - Choose Scenario</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0e; }
-    #root { width: 100%; height: 100%; }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-    input[type=number] { -moz-appearance: textfield; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c12;
+      --panel: #171923;
+      --panel-2: #202333;
+      --border: #303447;
+      --text: #f5f7fb;
+      --muted: #a5abbe;
+      --soft: #7d8498;
+      --blue: #2ebac6;
+      --green: #46bc8c;
+      --purple: #b6509e;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(880px, 100%);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .label::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    h1 {
+      font-size: clamp(34px, 6vw, 54px);
+      line-height: 1;
+      letter-spacing: 0;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .safety {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 24px 0;
+    }
+
+    .safe-item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .safe-item strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .safe-item span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 260px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .choice:hover,
+    .choice:focus-visible {
+      border-color: var(--blue);
+      outline: none;
+    }
+
+    .choice-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(46, 186, 198, 0.14);
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .choice:nth-child(2) .icon {
+      background: rgba(182, 80, 158, 0.16);
+      color: #f2a9dd;
+    }
+
+    .route {
+      color: var(--soft);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .goal {
+      margin-top: auto;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 7px;
+      background: var(--blue);
+      color: #041014;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .choice:nth-child(2) .button {
+      background: linear-gradient(135deg, var(--purple), var(--blue));
+      color: #fff;
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--soft);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        align-items: flex-start;
+        padding: 18px;
+      }
+
+      .safety,
+      .choices {
+        grid-template-columns: 1fr;
+      }
+
+      .choice {
+        min-height: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <main>
+    <header>
+      <div class="label">Safe demo</div>
+      <h1>Choose a simulated dApp flow</h1>
+      <p class="subtitle">
+        This is a training demo with fake wallet balances. Pick a scenario and try to complete the task.
+      </p>
+    </header>
 
-  <!-- React 18 + Babel -->
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <section class="safety" aria-label="Safety notes">
+      <div class="safe-item">
+        <strong>Fake funds</strong>
+        <span>No real USDC or crypto is used.</span>
+      </div>
+      <div class="safe-item">
+        <strong>No wallet access</strong>
+        <span>Nothing connects to browser extensions.</span>
+      </div>
+      <div class="safe-item">
+        <strong>Isolated page</strong>
+        <span>All prompts and balances are simulated.</span>
+      </div>
+    </section>
 
-  <!-- Shared state (vanilla JS, must load first) -->
-  <script src="shared-state.js?v=2"></script>
+    <section class="choices" aria-label="Scenarios">
+      <a class="choice" href="/hyperliquid.html">
+        <div class="choice-top">
+          <span class="icon">H</span>
+          <span class="route">/hyperliquid.html</span>
+        </div>
+        <h2>HyperLivid perps</h2>
+        <p>
+          A friend told you about a new perps app for speculating on oil prices after market close.
+          Your assets are on the wrong chain.
+        </p>
+        <div class="goal">
+          Goal: move funds to the right network, handle gas, and deposit into the app.
+        </div>
+        <span class="button">Start perps scenario</span>
+      </a>
 
-  <!-- Components (Babel JSX, load in order) -->
-  <script type="text/babel" src="WalletPanel.jsx?v=4"></script>
-  <script type="text/babel" src="DAppPanel.jsx?v=2"></script>
-  <script type="text/babel" src="CoinbasePanel.jsx?v=3"></script>
-  <script type="text/babel" src="Main.jsx?v=2"></script>
+      <a class="choice" href="/aave.html">
+        <div class="choice-top">
+          <span class="icon">W</span>
+          <span class="route">/aave.html</span>
+        </div>
+        <h2>Waave yield</h2>
+        <p>
+          You spot a high-yield opportunity, but your funds need to be moved before you can supply them.
+        </p>
+        <div class="goal">
+          Goal: get assets onto Base, handle gas, connect the simulated wallet, and supply funds.
+        </div>
+        <span class="button">Start yield scenario</span>
+      </a>
+    </section>
+
+    <footer>
+      Training simulator only. Displayed assets, balances, and wallet prompts are not real.
+    </footer>
+  </main>
 </body>
 </html>
