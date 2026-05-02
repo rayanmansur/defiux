@@ -39,7 +39,7 @@ const TOKEN_META = {
   EURC:   { name: 'Euro Coin',    color: '#2775CA', letter: 'E' },
   cbETH:  { name: 'Coinbase ETH', color: '#0052FF', letter: 'C' },
   GHO:    { name: 'GHO',          color: '#8BC34A', letter: 'G' },
-  AAVE:   { name: 'Aave',         color: '#B6509E', letter: 'A' },
+  AAVE:   { name: 'Waave',        color: '#B6509E', letter: 'A' },
   ezETH:  { name: 'Renzo ETH',    color: '#6DB33F', letter: 'Z' },
 };
 
@@ -113,16 +113,22 @@ function getFee(toToken) {
 }
 
 // ── Small components ──────────────────────────────────────────
+function tokenIconSrc(symbol, color) {
+  const label = String(symbol || '?').trim().charAt(0).toUpperCase() || '?';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="${color}"/><circle cx="32" cy="32" r="29" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2"/><text x="32" y="38" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="${label.length > 1 ? 20 : 27}" font-weight="800" fill="white">${label}</text></svg>`;
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
+
 function TokIcon({ symbol, chain, size = 32 }) {
   const m = TOKEN_META[symbol] || { color: '#555', letter: symbol?.[0] || '?' };
   const ch = chain ? CHAIN_META[chain] : null;
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <div style={{
-        width: size, height: size, borderRadius: '50%', background: m.color,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.38, color: '#fff', fontWeight: 800,
-      }}>{m.letter}</div>
+      <img
+        src={tokenIconSrc(symbol, m.color)}
+        alt=""
+        style={{ width: size, height: size, borderRadius: '50%', display: 'block' }}
+      />
       {ch && (
         <div style={{
           position: 'absolute', bottom: -1, right: -1,
@@ -312,7 +318,7 @@ function AssetPicker({ state, exclude, onSelect, onClose }) {
 // ── Swap Screen ───────────────────────────────────────────────
 function SwapScreen({ state }) {
   const [from, setFrom]     = useState({ chain: 'solana', token: 'USDC' });
-  const [to,   setTo]       = useState({ chain: 'arbitrum', token: 'USDC' });
+  const [to,   setTo]       = useState(() => ({ chain: state.aaveSupplied ? 'base' : 'arbitrum', token: 'USDC' }));
   const [amount, setAmount] = useState('');
   const [picker, setPicker] = useState(null);
   const [status, setStatus] = useState(null);
@@ -555,20 +561,26 @@ function PendingOverlay({ pendingTx }) {
 // ── Request overlay ───────────────────────────────────────────
 function RequestOverlay({ request }) {
   const isSign = request.type === 'sign';
+  const isAave = (request.dappName || request.protocol || request.action || '').toLowerCase().includes('aave');
+  const dappName = request.dappName || (isAave ? 'Waave' : 'HyperLivid');
+  const dappHost = isAave ? 'app.waave.invalid' : 'app.hyperlivid.invalid';
+  const network = isAave ? 'Base' : 'Arbitrum';
+  const gas = isAave ? '~0.00008 ETH' : '~0.0001 ETH';
+  const contract = isAave ? 'Waave v3 Pool' : 'HyperLivid Bridge v2';
   return (
     <div style={{ position: 'absolute', inset: 0, background: W.bg, display: 'flex', flexDirection: 'column', zIndex: 60 }}>
       <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid ' + W.border, display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: 10, background: '#0d1420', border: '1.5px solid #1e4a7a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌊</div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: W.text }}>{request.dappName || 'Hyperliquid'}</div>
-          <div style={{ fontSize: 11, color: W.muted }}>app.hyperliquid.xyz</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: W.text }}>{dappName}</div>
+          <div style={{ fontSize: 11, color: W.muted }}>{dappHost}</div>
         </div>
       </div>
       <div style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: W.text }}>{isSign ? 'Sign Transaction' : 'Connect Wallet'}</div>
         {!isSign ? (
           <>
-            <div style={{ fontSize: 13, color: W.muted, lineHeight: 1.6 }}>Hyperliquid is requesting to connect to your wallet to view your address and request transaction signatures.</div>
+            <div style={{ fontSize: 13, color: W.muted, lineHeight: 1.6 }}>{dappName} is requesting to connect to your wallet to view your address and request transaction signatures.</div>
             <div style={{ background: W.card, borderRadius: 12, padding: 14 }}>
               <div style={{ fontSize: 11, color: W.muted, marginBottom: 6 }}>Permissions requested</div>
               {['View wallet address', 'Request transaction signatures', 'View token balances'].map(p => (
@@ -584,9 +596,9 @@ function RequestOverlay({ request }) {
               {[
                 ['Action', request.action || 'Deposit'],
                 request.amount && ['Amount', `${request.amount} ${request.token || 'USDC'}`],
-                ['Network', 'Arbitrum'],
-                ['Gas', '~0.0001 ETH'],
-                ['Contract', 'Hyperliquid Bridge v2'],
+                ['Network', network],
+                ['Gas', gas],
+                ['Contract', contract],
               ].filter(Boolean).map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: W.muted }}>{k}</span>

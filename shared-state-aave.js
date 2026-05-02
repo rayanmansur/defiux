@@ -108,14 +108,15 @@
       notify();
     },
 
-    sendCoinbaseToWallet(token, amt) {
+    sendCoinbaseToWallet(token, amt, receiveAmt) {
       const have = _state.coinbaseHoldings[token] || 0;
-      const actual = Math.min(have, amt);
-      if (actual <= 0) return false;
-      _state.coinbaseHoldings[token] -= actual;
+      const debit = Math.min(have, amt);
+      const receive = Math.max(0, parseFloat(receiveAmt ?? debit) || 0);
+      if (debit <= 0 || receive <= 0) return false;
+      _state.coinbaseHoldings[token] -= debit;
       const chainMap = { SOL: 'solana', ETH: 'base' };
       const chain = chainMap[token] || 'base';
-      _state.balances[chain][token] = (_state.balances[chain][token] || 0) + actual;
+      _state.balances[chain][token] = (_state.balances[chain][token] || 0) + receive;
       notify();
       return true;
     },

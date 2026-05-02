@@ -97,13 +97,13 @@ function DepositModal({ state, onClose, onSuccess }) {
 
     setPhase('signing');
     try {
-      await AppState.requestSign({ action: 'Deposit to Hyperliquid', amount: numAmt, token: 'USDC' });
+      await AppState.requestSign({ action: 'Deposit to HyperLivid', amount: numAmt, token: 'USDC' });
       setPhase('pending');
-      await AppState.runTx(`Depositing ${numAmt} USDC → Hyperliquid`, 'arbitrum', async () => {
+      await AppState.runTx(`Depositing ${numAmt} USDC → HyperLivid`, 'arbitrum', async () => {
         AppState.addBalance('arbitrum', 'USDC', -numAmt);
         AppState.addBalance('arbitrum', 'ETH', -0.0001);
         AppState.setHyperliquidBalance((state.hyperliquidBalance || 0) + numAmt);
-        AppState.addHistory({ type: 'Deposit', desc: `${numAmt} USDC → Hyperliquid`, status: 'Success' });
+        AppState.addHistory({ type: 'Deposit', desc: `${numAmt} USDC → HyperLivid`, status: 'Success' });
       });
       onSuccess(numAmt);
     } catch (e) {
@@ -142,7 +142,7 @@ function DepositModal({ state, onClose, onSuccess }) {
             <div style={{ background: HL.bg, borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 ['From',  'Arbitrum wallet'],
-                ['To',    'Hyperliquid L1'],
+                ['To',    'HyperLivid L1'],
                 ['Gas',   '~0.0001 ETH (Arbitrum)'],
               ].map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
@@ -179,16 +179,16 @@ function SuccessModal({ amount, onClose }) {
       <div style={{ background: HL.panel, border: '1px solid rgba(0,232,162,.2)', borderRadius: 20, padding: 40, width: 380, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ fontSize: 56 }}>🎉</div>
         <div style={{ color: HL.text, fontWeight: 800, fontSize: 22 }}>Demo Complete!</div>
-        <div style={{ color: HL.green, fontSize: 15, fontWeight: 600 }}>{amount} USDC deposited to Hyperliquid</div>
+        <div style={{ color: HL.green, fontSize: 15, fontWeight: 600 }}>{amount} USDC deposited to HyperLivid</div>
         <div style={{ color: HL.muted, fontSize: 13, lineHeight: 1.8 }}>
           You navigated the full cross-chain DeFi flow:<br/>
-          <strong style={{ color: HL.text }}>Coinbase → Solana → Arbitrum → Hyperliquid</strong>
+          <strong style={{ color: HL.text }}>Coinbase → Solana → Arbitrum → HyperLivid</strong>
         </div>
         <div style={{ background: HL.bg, borderRadius: 12, padding: 14, fontSize: 12, color: HL.muted, textAlign: 'left', lineHeight: 2 }}>
           <div>✓ Funded gas via Coinbase</div>
           <div>✓ Bridged USDC: Solana → Arbitrum</div>
           <div>✓ Sourced ETH gas for Arbitrum</div>
-          <div>✓ Signed deposit on Hyperliquid</div>
+          <div>✓ Signed deposit on HyperLivid</div>
         </div>
         <button onClick={onClose} style={{ padding: 14, borderRadius: 12, border: 'none', background: HL.green, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Close</button>
       </div>
@@ -329,7 +329,7 @@ function TopNav({ state, onConnect, onEarnClick }) {
     <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', height: 44, borderBottom: '1px solid ' + HL.border, background: HL.bg, flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginRight: 16 }}>
         <div style={{ width: 22, height: 22, background: HL.teal, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#000' }}>H</div>
-        <span style={{ color: HL.text, fontWeight: 800, fontSize: 14 }}>Hyperliquid</span>
+        <span style={{ color: HL.text, fontWeight: 800, fontSize: 14 }}>HyperLivid</span>
       </div>
       {navItems.map((item, i) => (
         <button key={item}
@@ -415,7 +415,7 @@ function DAppPanel({ onEarnClick }) {
   }, []);
 
   async function handleConnect() {
-    try { await AppState.requestConnect('Hyperliquid'); } catch (e) {}
+    try { await AppState.requestConnect('HyperLivid'); } catch (e) {}
   }
   window._dappConnect = handleConnect;
 

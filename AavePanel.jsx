@@ -56,13 +56,19 @@ function usdVal(prices, token, amt) {
 }
 
 // ── Token icon ────────────────────────────────────────────────
-function TokIcon({ color, letter, size = 28 }) {
+function aaveTokenIconSrc(color, letter) {
+  const label = String(letter || '?').slice(0, 2);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="${color}"/><circle cx="32" cy="32" r="29" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2"/><text x="32" y="38" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="${label.length > 1 ? 20 : 27}" font-weight="800" fill="white">${label}</text></svg>`;
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
+
+function AaveTokIcon({ color, letter, size = 28 }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', background: color,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.38, color: '#fff', fontWeight: 800, flexShrink: 0,
-    }}>{letter}</div>
+    <img
+      src={aaveTokenIconSrc(color, letter)}
+      alt=""
+      style={{ width: size, height: size, borderRadius: '50%', display: 'block', flexShrink: 0 }}
+    />
   );
 }
 
@@ -79,23 +85,24 @@ function SupplyModal({ asset, state, onClose, onSuccess }) {
   async function submit() {
     setErr('');
     if (numAmt <= 0) return;
+    if (!state.walletConnected) { setErr('Connect wallet before supplying'); return; }
     if (ethBal <= 0)       { setErr('Transaction failed: insufficient ETH for gas on Base'); return; }
     if (numAmt > walletBal){ setErr(`Transaction failed: insufficient ${asset.token} balance`); return; }
 
     setPhase('signing');
     try {
       await AppState.requestSign({
-        action: `Supply ${asset.token} to Aave`,
+        action: `Supply ${asset.token} to Waave`,
         amount: numAmt,
         token: asset.token,
-        protocol: 'Aave v3 · Base',
+        protocol: 'Waave v3 · Base',
       });
       setPhase('pending');
-      await AppState.runTx(`Supplying ${numAmt} ${asset.token} to Aave (Base)`, 'base', async () => {
+      await AppState.runTx(`Supplying ${numAmt} ${asset.token} to Waave (Base)`, 'base', async () => {
         AppState.addBalance('base', asset.token, -numAmt);
         AppState.addBalance('base', 'ETH', -0.00008);
         AppState.aaveSupply(asset.token, numAmt);
-        AppState.addHistory({ type: 'Supply', desc: `${numAmt} ${asset.token} → Aave Base`, status: 'Success' });
+        AppState.addHistory({ type: 'Supply', desc: `${numAmt} ${asset.token} → Waave Base`, status: 'Success' });
       });
       onSuccess(numAmt, asset.token);
     } catch (e) {
@@ -111,10 +118,10 @@ function SupplyModal({ asset, state, onClose, onSuccess }) {
       <div style={{ background: AV.panel, border: '1px solid ' + AV.border2, borderRadius: 18, padding: 28, width: 400, display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <TokIcon color={asset.color} letter={asset.letter} size={36} />
+          <AaveTokIcon color={asset.color} letter={asset.letter} size={36} />
           <div style={{ flex: 1 }}>
             <div style={{ color: AV.text, fontWeight: 700, fontSize: 16 }}>Supply {asset.token}</div>
-            <div style={{ color: AV.muted, fontSize: 11 }}>Aave v3 · Base Market</div>
+            <div style={{ color: AV.muted, fontSize: 11 }}>Waave v3 · Base Market</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: AV.muted, fontSize: 22, cursor: 'pointer' }}>×</button>
         </div>
@@ -200,6 +207,7 @@ function BorrowModal({ asset, state, onClose, onSuccess }) {
   async function submit() {
     setErr('');
     if (numAmt <= 0) return;
+    if (!state.walletConnected) { setErr('Connect wallet before borrowing'); return; }
     if (totalSuppliedUsd === 0) { setErr('Transaction failed: supply collateral first to enable borrowing'); return; }
     if (ethBal <= 0)            { setErr('Transaction failed: insufficient ETH for gas on Base'); return; }
     if (numAmt > availableToken){ setErr('Transaction failed: exceeds borrowing capacity'); return; }
@@ -207,17 +215,17 @@ function BorrowModal({ asset, state, onClose, onSuccess }) {
     setPhase('signing');
     try {
       await AppState.requestSign({
-        action: `Borrow ${asset.token} from Aave`,
+        action: `Borrow ${asset.token} from Waave`,
         amount: numAmt,
         token: asset.token,
-        protocol: 'Aave v3 · Base',
+        protocol: 'Waave v3 · Base',
       });
       setPhase('pending');
-      await AppState.runTx(`Borrowing ${numAmt} ${asset.token} from Aave (Base)`, 'base', async () => {
+      await AppState.runTx(`Borrowing ${numAmt} ${asset.token} from Waave (Base)`, 'base', async () => {
         AppState.addBalance('base', asset.token, numAmt);
         AppState.addBalance('base', 'ETH', -0.00008);
         AppState.aaveBorrow(asset.token, numAmt);
-        AppState.addHistory({ type: 'Borrow', desc: `${numAmt} ${asset.token} ← Aave Base`, status: 'Success' });
+        AppState.addHistory({ type: 'Borrow', desc: `${numAmt} ${asset.token} ← Waave Base`, status: 'Success' });
       });
       onSuccess(numAmt, asset.token);
     } catch (e) {
@@ -236,10 +244,10 @@ function BorrowModal({ asset, state, onClose, onSuccess }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <div style={{ background: AV.panel, border: '1px solid ' + AV.border2, borderRadius: 18, padding: 28, width: 420, display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <TokIcon color={asset.color} letter={asset.letter} size={36} />
+          <AaveTokIcon color={asset.color} letter={asset.letter} size={36} />
           <div style={{ flex: 1 }}>
             <div style={{ color: AV.text, fontWeight: 700, fontSize: 16 }}>Borrow {asset.token}</div>
-            <div style={{ color: AV.muted, fontSize: 11 }}>Variable rate · Aave v3 · Base</div>
+            <div style={{ color: AV.muted, fontSize: 11 }}>Variable rate · Waave v3 · Base</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: AV.muted, fontSize: 22, cursor: 'pointer' }}>×</button>
         </div>
@@ -317,18 +325,18 @@ function SupplySuccessModal({ amount, token, onClose }) {
         <div style={{ fontSize: 56 }}>🎉</div>
         <div style={{ color: AV.text, fontWeight: 800, fontSize: 22 }}>Demo Complete!</div>
         <div style={{ color: AV.green, fontSize: 15, fontWeight: 600 }}>
-          {typeof amount === 'number' ? amount.toFixed(4) : amount} {token} supplied to Aave
+          {typeof amount === 'number' ? amount.toFixed(4) : amount} {token} supplied to Waave
         </div>
         <div style={{ color: AV.muted, fontSize: 13, lineHeight: 1.8 }}>
           You navigated the full cross-chain DeFi flow:<br/>
-          <strong style={{ color: AV.text }}>Coinbase → Wallet → Base → Aave</strong>
+          <strong style={{ color: AV.text }}>Coinbase → Wallet → Base → Waave</strong>
         </div>
         <div style={{ background: AV.bg, borderRadius: 12, padding: 14, fontSize: 12, color: AV.muted, textAlign: 'left', lineHeight: 2 }}>
           <div>✓ Funded gas via Coinbase</div>
           <div>✓ Bridged assets to Base network</div>
-          <div>✓ Connected wallet to Aave</div>
+          <div>✓ Connected wallet to Waave</div>
           <div>✓ Signed supply transaction</div>
-          <div>✓ Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || '—'}% APY on Aave</div>
+          <div>✓ Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || '—'}% APY on Waave</div>
         </div>
         <button onClick={onClose} style={{
           padding: 14, borderRadius: 12, border: 'none',
@@ -343,8 +351,10 @@ function SupplySuccessModal({ amount, token, onClose }) {
 function DashStats({ state }) {
   const supplied = state.aaveSupplied || {};
   const borrowed = state.aaveBorrowed || {};
-  const netWorth = Object.entries(supplied).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0)
-    - Object.entries(borrowed).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
+  const baseWalletUsd = Object.entries(state.balances.base || {}).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
+  const suppliedUsd = Object.entries(supplied).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
+  const borrowedUsd = Object.entries(borrowed).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
+  const netWorth = baseWalletUsd + suppliedUsd - borrowedUsd;
   const supplyApy = Object.entries(supplied).reduce((s, [t, a]) => {
     const asset = SUPPLY_ASSETS.find(x => x.token === t);
     return s + (asset ? asset.apy / 100 * usdVal(state.prices, t, a) : 0);
@@ -413,7 +423,7 @@ function YourSupplies({ state, onWithdraw }) {
             return (
               <div key={tok} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid ' + AV.border }}>
                 <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <TokIcon color={asset.color} letter={asset.letter} size={26} />
+                  <AaveTokIcon color={asset.color} letter={asset.letter} size={26} />
                   <span style={{ fontSize: 13, fontWeight: 600, color: AV.text }}>{tok}</span>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
@@ -473,7 +483,7 @@ function YourBorrows({ state }) {
             return (
               <div key={tok} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid ' + AV.border }}>
                 <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <TokIcon color={asset.color} letter={asset.letter} size={26} />
+                  <AaveTokIcon color={asset.color} letter={asset.letter} size={26} />
                   <span style={{ fontSize: 13, fontWeight: 600, color: AV.text }}>{tok}</span>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
@@ -535,7 +545,7 @@ function AssetsToSupply({ state, onSupply }) {
         return (
           <div key={asset.token} style={{ display: 'flex', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid ' + AV.border }}>
             <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TokIcon color={asset.color} letter={asset.letter} size={28} />
+              <AaveTokIcon color={asset.color} letter={asset.letter} size={28} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: AV.text }}>{asset.token}</div>
                 {asset.extra && <div style={{ fontSize: 10, color: AV.blue }}>{asset.extra} ⓘ</div>}
@@ -550,6 +560,7 @@ function AssetsToSupply({ state, onSupply }) {
             </div>
             <div style={{ width: 100, display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
               <button
+                disabled={!canAct}
                 onClick={() => canAct && onSupply(asset)}
                 style={{
                   background: canAct ? 'rgba(46,186,198,.12)' : AV.border2,
@@ -572,6 +583,7 @@ function AssetsToSupply({ state, onSupply }) {
 // ── Assets to Borrow table ────────────────────────────────────
 function AssetsToBorrow({ state, onBorrow }) {
   const supplied = state.aaveSupplied || {};
+  const connected = state.walletConnected;
   const hasCollateral = Object.values(supplied).some(v => v > 0);
 
   return (
@@ -584,7 +596,13 @@ function AssetsToBorrow({ state, onBorrow }) {
         </div>
       </div>
 
-      {!hasCollateral && (
+      {!connected && (
+        <div style={{ background: 'rgba(46,186,198,.08)', border: '1px solid rgba(46,186,198,.2)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: AV.blue, marginBottom: 12 }}>
+          Connect your wallet to borrow assets.
+        </div>
+      )}
+
+      {connected && !hasCollateral && (
         <div style={{ background: 'rgba(46,186,198,.08)', border: '1px solid rgba(46,186,198,.2)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: AV.blue, marginBottom: 12 }}>
           ℹ To borrow you need to supply any asset to be used as collateral.
         </div>
@@ -602,21 +620,23 @@ function AssetsToBorrow({ state, onBorrow }) {
         const supUsd = Object.entries(supplied2).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
         const borUsd = Object.entries(state.aaveBorrowed || {}).reduce((s, [t, a]) => s + usdVal(state.prices, t, a), 0);
         const avail  = Math.max(0, (supUsd * 0.75 - borUsd) / (state.prices[asset.token] || 1));
+        const canAct = connected && hasCollateral && avail > 0;
         return (
           <div key={asset.token} style={{ display: 'flex', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid ' + AV.border }}>
             <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TokIcon color={asset.color} letter={asset.letter} size={28} />
+              <AaveTokIcon color={asset.color} letter={asset.letter} size={28} />
               <span style={{ fontSize: 13, fontWeight: 600, color: AV.text }}>{asset.token}</span>
             </div>
             <div style={{ flex: 1, textAlign: 'right', fontSize: 13, color: avail > 0 ? AV.text : AV.muted }}>{avail > 0 ? fmt(avail, 4) : '—'}</div>
             <div style={{ flex: 1, textAlign: 'right', fontSize: 13, color: AV.red }}>{asset.apy.toFixed(2)}%</div>
             <div style={{ width: 120, display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-              <button onClick={() => onBorrow(asset)} style={{
-                background: 'rgba(232,65,66,.12)',
-                border: '1px solid rgba(232,65,66,.3)',
+              <button disabled={!canAct} onClick={() => canAct && onBorrow(asset)} style={{
+                background: canAct ? 'rgba(232,65,66,.12)' : AV.border2,
+                border: canAct ? '1px solid rgba(232,65,66,.3)' : 'none',
                 borderRadius: 7, padding: '5px 12px',
-                color: AV.red,
-                fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                color: canAct ? AV.red : AV.muted,
+                fontSize: 11, fontWeight: 600, cursor: canAct ? 'pointer' : 'not-allowed',
+                opacity: canAct ? 1 : 0.5,
               }}>Borrow</button>
               <button style={{ background: AV.border2, border: 'none', borderRadius: 7, padding: '5px 10px', color: AV.muted2, fontSize: 11, cursor: 'pointer' }}>Details</button>
             </div>
@@ -646,7 +666,7 @@ function AaveTopNav({ state, onConnect, onMarketsClick }) {
     <>
       {/* Banner */}
       <div style={{ background: AV.grad, padding: '7px 20px', fontSize: 11, color: '#fff', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <span>Aave V4 is now live on Ethereum mainnet.</span>
+        <span>Waave V4 is now live on Ethereum mainnet.</span>
         <button style={{ background: 'rgba(255,255,255,.2)', border: 'none', borderRadius: 5, padding: '2px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>TRY IT OUT HERE</button>
         <div style={{ flex: 1 }} />
         <button style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer' }}>×</button>
@@ -656,7 +676,7 @@ function AaveTopNav({ state, onConnect, onMarketsClick }) {
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 20px', height: 50, background: AV.panel, borderBottom: '1px solid ' + AV.border, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 24 }}>
           <div style={{ width: 22, height: 22, borderRadius: '50%', background: AV.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 900 }}>A</div>
-          <span style={{ fontWeight: 800, fontSize: 14, color: AV.text, letterSpacing: '-.3px' }}>aave</span>
+          <span style={{ fontWeight: 800, fontSize: 14, color: AV.text, letterSpacing: '-.3px' }}>waave</span>
         </div>
 
         {[
@@ -707,19 +727,19 @@ function AavePanel({ onAdminOpen }) {
   useEffect(() => AppState.subscribe(setState), []);
 
   async function handleConnect() {
-    try { await AppState.requestConnect('Aave'); } catch (e) {}
+    try { await AppState.requestConnect('Waave'); } catch (e) {}
   }
   window._dappConnect = handleConnect;
 
   function handleWithdraw(token, amt) {
     (async () => {
       try {
-        await AppState.requestSign({ action: `Withdraw ${token} from Aave`, amount: amt, token, protocol: 'Aave v3 · Base' });
-        await AppState.runTx(`Withdrawing ${amt} ${token} from Aave`, 'base', async () => {
+        await AppState.requestSign({ action: `Withdraw ${token} from Waave`, amount: amt, token, protocol: 'Waave v3 · Base' });
+        await AppState.runTx(`Withdrawing ${amt} ${token} from Waave`, 'base', async () => {
           AppState.addBalance('base', token, amt);
           AppState.addBalance('base', 'ETH', -0.00006);
           AppState.aaveWithdraw(token, amt);
-          AppState.addHistory({ type: 'Withdraw', desc: `${amt} ${token} ← Aave Base`, status: 'Success' });
+          AppState.addHistory({ type: 'Withdraw', desc: `${amt} ${token} ← Waave Base`, status: 'Success' });
         });
         setToast(`Withdrew ${fmt(amt)} ${token} successfully`);
       } catch (e) {}
@@ -763,7 +783,7 @@ function AavePanel({ onAdminOpen }) {
           asset={borrowModal}
           state={state}
           onClose={() => setBorrowModal(null)}
-          onSuccess={(amt, tok) => { setBorrowModal(null); setToast(`Borrowed ${fmt(amt)} ${tok} from Aave`); }}
+          onSuccess={(amt, tok) => { setBorrowModal(null); setToast(`Borrowed ${fmt(amt)} ${tok} from Waave`); }}
         />
       )}
       {toast && <SuccessToast msg={toast} onClose={() => setToast(null)} />}

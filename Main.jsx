@@ -132,7 +132,7 @@ function AdminPanel({ visible, onClose }) {
         {/* Misc */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
           <div style={{ background: A.bg, borderRadius: 10, padding: 12 }}>
-            <div style={{ fontSize: 11, color: A.muted, marginBottom: 6 }}>Hyperliquid Balance (USDC)</div>
+            <div style={{ fontSize: 11, color: A.muted, marginBottom: 6 }}>HyperLivid Balance (USDC)</div>
             <input type="number" min="0"
               value={state.hyperliquidBalance || 0}
               onChange={e => AppState.setHyperliquidBalance(parseFloat(e.target.value) || 0)}
@@ -176,7 +176,7 @@ function TabBar({ active, onChange }) {
       borderBottom: '1px solid #1a1a24', padding: '0 0', flexShrink: 0, height: 38,
     }}>
       {[
-        { id: 'hyperliquid', label: 'Hyperliquid', icon: '🌊' },
+        { id: 'hyperliquid', label: 'HyperLivid', icon: '🌊' },
         { id: 'coinbase',    label: 'Coinbase',    icon: '🏦' },
       ].map(tab => (
         <button key={tab.id} onClick={() => onChange(tab.id)} style={{

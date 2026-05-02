@@ -112,7 +112,7 @@ function AdminPanel({ visible, onClose }) {
 
         {/* Aave positions reset */}
         <div style={{ background: AM.bg, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: AM.muted, marginBottom: 10 }}>Aave Positions (Base)</div>
+          <div style={{ fontSize: 11, color: AM.muted, marginBottom: 10 }}>Waave Positions (Base)</div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: AM.muted, marginBottom: 4 }}>Supplied USDC</div>
@@ -147,7 +147,7 @@ function TabBar({ active, onChange }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', background: '#08080c', borderBottom: '1px solid #1a1a24', height: 38, flexShrink: 0 }}>
       {[
-        { id: 'aave',     label: 'Aave',     icon: '🌊' },
+        { id: 'aave',     label: 'Waave',    icon: '🌊' },
         { id: 'coinbase', label: 'Coinbase', icon: '🏦' },
       ].map(tab => (
         <button key={tab.id} onClick={() => onChange(tab.id)} style={{
@@ -163,7 +163,7 @@ function TabBar({ active, onChange }) {
         </button>
       ))}
       <div style={{ flex: 1 }} />
-      <div style={{ fontSize: 10, color: AM.muted, paddingRight: 14 }}>DeFi UX Simulator · Aave</div>
+      <div style={{ fontSize: 10, color: AM.muted, paddingRight: 14 }}>DeFi UX Simulator · Waave</div>
     </div>
   );
 }

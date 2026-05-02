@@ -136,7 +136,7 @@ function AddCashStep({ cbBalance, onDone }) {
 }
 
 // ── Step 2: Buy Crypto ────────────────────────────────────────
-function BuyCryptoStep({ cbBalance, holdings, onDone }) {
+function BuyCryptoStep({ cbBalance, holdings, onDone, ethNetwork = 'Arbitrum' }) {
   const [token,  setToken]  = useState('SOL');
   const [amount, setAmount] = useState('');
   const [phase,  setPhase]  = useState('idle');
@@ -173,7 +173,7 @@ function BuyCryptoStep({ cbBalance, holdings, onDone }) {
       <div style={{ display: 'flex', gap: 10 }}>
         {[
           { symbol: 'SOL', name: 'Solana',   color: '#9945FF', desc: 'Solana gas' },
-          { symbol: 'ETH', name: 'Ethereum', color: '#627EEA', desc: 'Arbitrum gas' },
+          { symbol: 'ETH', name: 'Ethereum', color: '#627EEA', desc: `${ethNetwork} gas` },
         ].map(t => (
           <button key={t.symbol} onClick={() => setToken(t.symbol)} style={{
             flex: 1, padding: '12px 10px', borderRadius: 12, border: '2px solid ' + (token === t.symbol ? CB.blue : CB.border),
@@ -241,7 +241,7 @@ function BuyCryptoStep({ cbBalance, holdings, onDone }) {
 }
 
 // ── Step 3: Send to Wallet ────────────────────────────────────
-function SendToWalletStep({ holdings, onDone }) {
+function SendToWalletStep({ holdings, onDone, ethNetwork = 'Arbitrum' }) {
   const [token,  setToken]  = useState('SOL');
   const [amount, setAmount] = useState('');
   const [phase,  setPhase]  = useState('idle');
@@ -252,7 +252,7 @@ function SendToWalletStep({ holdings, onDone }) {
   const netFee = CB_WITHDRAW_FEE / (token === 'SOL' ? 165 : 3200); // fee in token units
   const receive = Math.max(0, num - netFee);
 
-  const chainMap = { SOL: 'Solana', ETH: 'Arbitrum' };
+  const chainMap = { SOL: 'Solana', ETH: ethNetwork };
 
   async function submit() {
     setErr('');
@@ -261,7 +261,7 @@ function SendToWalletStep({ holdings, onDone }) {
     if (receive <= 0) { setErr('Amount too small to cover network fee'); return; }
     setPhase('processing');
     await new Promise(r => setTimeout(r, 2000));
-    const ok = AppState.sendCoinbaseToWallet(token, num);
+    const ok = AppState.sendCoinbaseToWallet(token, num, receive);
     if (!ok) { setErr('Transfer failed'); setPhase('idle'); return; }
     AppState.addHistory({ type: 'Withdraw', desc: `${fmt(receive)} ${token} → self-custody wallet`, status: 'Success' });
     setPhase('done');
@@ -349,6 +349,7 @@ function CoinbasePanel() {
 
   const cbBalance = state.coinbaseBalance || 0;
   const holdings  = state.coinbaseHoldings || { SOL: 0, ETH: 0 };
+  const ethNetwork = state.aaveSupplied ? 'Base' : 'Arbitrum';
 
   return (
     <div style={{ width: '100%', height: '100%', background: CB.bg, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', -apple-system, sans-serif", overflow: 'hidden' }}>
@@ -375,8 +376,8 @@ function CoinbasePanel() {
           <Steps current={step} />
 
           {step === 0 && <AddCashStep    cbBalance={cbBalance} onDone={() => setStep(1)} />}
-          {step === 1 && <BuyCryptoStep  cbBalance={cbBalance} holdings={holdings} onDone={() => setStep(2)} />}
-          {step === 2 && <SendToWalletStep holdings={holdings} onDone={() => setStep(0)} />}
+          {step === 1 && <BuyCryptoStep  cbBalance={cbBalance} holdings={holdings} ethNetwork={ethNetwork} onDone={() => setStep(2)} />}
+          {step === 2 && <SendToWalletStep holdings={holdings} ethNetwork={ethNetwork} onDone={() => setStep(0)} />}
 
           {/* Step nav */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20, paddingTop: 16, borderTop: '1px solid ' + CB.border }}>
