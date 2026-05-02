@@ -30,8 +30,13 @@
     polygon:  7,
   };
 
+  function totalWalletUsd(balances) {
+    return Object.entries(balances).reduce((sum, [, toks]) =>
+      sum + Object.entries(toks).reduce((s, [tok, amt]) => s + (PRICES[tok] || 1) * amt, 0), 0);
+  }
+
   function fresh() {
-    return {
+    const state = {
       balances: {
         solana:   { USDC: 15, SOL: 0, BONK: 0, WIF: 0, JTO: 0 },
         arbitrum: { USDC: 0, ETH: 0, ARB: 0 },
@@ -51,6 +56,12 @@
       prices: PRICES,
       gasTokens: GAS_TOKENS,
     };
+    state.sessionStats = {
+      fundsIntroducedUsd: totalWalletUsd(state.balances),
+      bankAddedUsd: 0,
+      fees: [],
+    };
+    return state;
   }
 
   let _state = fresh();
@@ -62,6 +73,10 @@
       balances: JSON.parse(JSON.stringify(_state.balances)),
       chainSpeeds: { ..._state.chainSpeeds },
       coinbaseHoldings: { ..._state.coinbaseHoldings },
+      sessionStats: {
+        ..._state.sessionStats,
+        fees: [...(_state.sessionStats?.fees || [])],
+      },
     };
   }
 
@@ -103,6 +118,10 @@
 
     addCoinbaseBalance(delta) {
       _state.coinbaseBalance = Math.max(0, _state.coinbaseBalance + delta);
+      if (delta > 0) {
+        _state.sessionStats.bankAddedUsd += delta;
+        _state.sessionStats.fundsIntroducedUsd += delta;
+      }
       notify();
     },
 
@@ -111,17 +130,25 @@
       notify();
     },
 
-    sendCoinbaseToWallet(token, amt) {
+    sendCoinbaseToWallet(token, amt, receiveAmt) {
       const have = _state.coinbaseHoldings[token] || 0;
-      const actual = Math.min(have, amt);
-      if (actual <= 0) return false;
-      _state.coinbaseHoldings[token] -= actual;
+      const debit = Math.min(have, amt);
+      const receive = Math.max(0, parseFloat(receiveAmt ?? debit) || 0);
+      if (debit <= 0 || receive <= 0) return false;
+      _state.coinbaseHoldings[token] -= debit;
       // Map token to its native chain
       const chainMap = { SOL: 'solana', ETH: 'arbitrum' };
       const chain = chainMap[token] || 'solana';
-      _state.balances[chain][token] = (_state.balances[chain][token] || 0) + actual;
+      _state.balances[chain][token] = (_state.balances[chain][token] || 0) + receive;
       notify();
       return true;
+    },
+
+    addFee(kind, label, amountUsd) {
+      const amount = Math.max(0, parseFloat(amountUsd) || 0);
+      if (amount <= 0) return;
+      _state.sessionStats.fees.push({ kind, label, amountUsd: amount });
+      notify();
     },
 
     setConnected(val) {

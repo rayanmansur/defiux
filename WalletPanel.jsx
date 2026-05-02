@@ -357,7 +357,12 @@ function SwapScreen({ state }) {
         from.chain,
         async () => {
           const gasToken = state.gasTokens[from.chain];
-          if (gasToken !== from.token) AppState.addBalance(from.chain, gasToken, -0.000005);
+          const inputUsd = usdVal(state.prices, from.token, numAmt);
+          AppState.addFee && AppState.addFee(isBridge ? 'Bridge fee' : 'Swap fee', `${fromCh?.name} to ${toCh?.name}`, inputUsd * feePct / 100);
+          if (gasToken !== from.token) {
+            AppState.addFee && AppState.addFee('Network gas', `${fromCh?.name} transaction`, usdVal(state.prices, gasToken, 0.000005));
+            AppState.addBalance(from.chain, gasToken, -0.000005);
+          }
           AppState.addBalance(from.chain, from.token, -numAmt);
           AppState.addBalance(to.chain, to.token, receive);
           AppState.addHistory({ type: isBridge ? 'Bridge' : 'Swap', desc: `${numAmt} ${from.token} → ${fmt(receive,6)} ${to.token}`, status: 'Success' });

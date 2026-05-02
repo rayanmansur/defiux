@@ -101,6 +101,7 @@ function SupplyModal({ asset, state, onClose, onSuccess }) {
       await AppState.runTx(`Supplying ${numAmt} ${asset.token} to Waave (Base)`, 'base', async () => {
         AppState.addBalance('base', asset.token, -numAmt);
         AppState.addBalance('base', 'ETH', -0.00008);
+        AppState.addFee && AppState.addFee('Network gas', 'Waave supply', 0.00008 * (state.prices.ETH || 3200));
         AppState.aaveSupply(asset.token, numAmt);
         AppState.addHistory({ type: 'Supply', desc: `${numAmt} ${asset.token} → Waave Base`, status: 'Success' });
       });
@@ -224,6 +225,7 @@ function BorrowModal({ asset, state, onClose, onSuccess }) {
       await AppState.runTx(`Borrowing ${numAmt} ${asset.token} from Waave (Base)`, 'base', async () => {
         AppState.addBalance('base', asset.token, numAmt);
         AppState.addBalance('base', 'ETH', -0.00008);
+        AppState.addFee && AppState.addFee('Network gas', 'Waave borrow', 0.00008 * (state.prices.ETH || 3200));
         AppState.aaveBorrow(asset.token, numAmt);
         AppState.addHistory({ type: 'Borrow', desc: `${numAmt} ${asset.token} ← Waave Base`, status: 'Success' });
       });
@@ -315,7 +317,36 @@ function SuccessToast({ msg, onClose }) {
 }
 
 // ── Supply Success Modal ───────────────────────────────────────
-function SupplySuccessModal({ amount, token, onClose }) {
+function FeeSummary({ state, deliveredUsd }) {
+  const stats = state.sessionStats || {};
+  const fees = stats.fees || [];
+  const totalFees = fees.reduce((sum, f) => sum + (parseFloat(f.amountUsd) || 0), 0);
+  const groupedFees = fees.reduce((acc, f) => {
+    acc[f.kind] = (acc[f.kind] || 0) + (parseFloat(f.amountUsd) || 0);
+    return acc;
+  }, {});
+  const introduced = stats.fundsIntroducedUsd || 0;
+  const feeDrag = introduced > 0 ? (totalFees / introduced) * 100 : 0;
+  const deliveryCost = deliveredUsd > 0 ? (totalFees / deliveredUsd) * 100 : 0;
+
+  return (
+    <div style={{ background: AV.bg, borderRadius: 12, padding: 14, fontSize: 12, color: AV.muted, textAlign: 'left', lineHeight: 1.8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Capital introduced</span><strong style={{ color: AV.text }}>{fmtUsd(introduced)}</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total fees spent</span><strong style={{ color: AV.red }}>{fmtUsd(totalFees)}</strong></div>
+      {Object.entries(groupedFees).map(([kind, amount]) => (
+        <div key={kind} style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 10 }}>
+          <span>{kind}</span><span style={{ color: AV.text }}>{fmtUsd(amount)}</span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Supplied to Waave</span><strong style={{ color: AV.green }}>{fmtUsd(deliveredUsd)}</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Fee drag</span><strong style={{ color: AV.text }}>{feeDrag.toFixed(2)}%</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cost vs supplied</span><strong style={{ color: AV.text }}>{deliveryCost.toFixed(2)}%</strong></div>
+    </div>
+  );
+}
+
+function SupplySuccessModal({ amount, token, state, onClose }) {
+  const deliveredUsd = usdVal(state.prices, token, parseFloat(amount) || 0);
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110 }}>
       <div style={{
@@ -338,6 +369,7 @@ function SupplySuccessModal({ amount, token, onClose }) {
           <div>✓ Signed supply transaction</div>
           <div>✓ Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || '—'}% APY on Waave</div>
         </div>
+        <FeeSummary state={state} deliveredUsd={deliveredUsd} />
         <button onClick={onClose} style={{
           padding: 14, borderRadius: 12, border: 'none',
           background: AV.grad, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
@@ -738,6 +770,7 @@ function AavePanel({ onAdminOpen }) {
         await AppState.runTx(`Withdrawing ${amt} ${token} from Waave`, 'base', async () => {
           AppState.addBalance('base', token, amt);
           AppState.addBalance('base', 'ETH', -0.00006);
+          AppState.addFee && AppState.addFee('Network gas', 'Waave withdraw', 0.00006 * (state.prices.ETH || 3200));
           AppState.aaveWithdraw(token, amt);
           AppState.addHistory({ type: 'Withdraw', desc: `${amt} ${token} ← Waave Base`, status: 'Success' });
         });
@@ -791,6 +824,7 @@ function AavePanel({ onAdminOpen }) {
         <SupplySuccessModal
           amount={successSupply.amount}
           token={successSupply.token}
+          state={state}
           onClose={() => setSuccessSupply(null)}
         />
       )}

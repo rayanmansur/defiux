@@ -7,6 +7,38 @@ const HL = {
   teal: '#00d4a8', blue: '#4a9eff', yellow: '#f0c040',
 };
 
+function fmtUsd(n) {
+  return '$' + (parseFloat(n) || 0).toFixed(2);
+}
+
+function FeeSummary({ state, deliveredUsd }) {
+  const stats = state.sessionStats || {};
+  const fees = stats.fees || [];
+  const totalFees = fees.reduce((sum, f) => sum + (parseFloat(f.amountUsd) || 0), 0);
+  const groupedFees = fees.reduce((acc, f) => {
+    acc[f.kind] = (acc[f.kind] || 0) + (parseFloat(f.amountUsd) || 0);
+    return acc;
+  }, {});
+  const introduced = stats.fundsIntroducedUsd || 0;
+  const feeDrag = introduced > 0 ? (totalFees / introduced) * 100 : 0;
+  const deliveryCost = deliveredUsd > 0 ? (totalFees / deliveredUsd) * 100 : 0;
+
+  return (
+    <div style={{ background: HL.bg, borderRadius: 12, padding: 14, fontSize: 12, color: HL.muted, textAlign: 'left', lineHeight: 1.8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Capital introduced</span><strong style={{ color: HL.text }}>{fmtUsd(introduced)}</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total fees spent</span><strong style={{ color: HL.red }}>{fmtUsd(totalFees)}</strong></div>
+      {Object.entries(groupedFees).map(([kind, amount]) => (
+        <div key={kind} style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 10 }}>
+          <span>{kind}</span><span style={{ color: HL.text }}>{fmtUsd(amount)}</span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Delivered to app</span><strong style={{ color: HL.green }}>{fmtUsd(deliveredUsd)}</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Fee drag</span><strong style={{ color: HL.text }}>{feeDrag.toFixed(2)}%</strong></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cost vs delivered</span><strong style={{ color: HL.text }}>{deliveryCost.toFixed(2)}%</strong></div>
+    </div>
+  );
+}
+
 // ── Candlestick chart ─────────────────────────────────────────
 function genCandles(n, start, vol) {
   const out = []; let p = start;
@@ -102,6 +134,7 @@ function DepositModal({ state, onClose, onSuccess }) {
       await AppState.runTx(`Depositing ${numAmt} USDC → HyperLivid`, 'arbitrum', async () => {
         AppState.addBalance('arbitrum', 'USDC', -numAmt);
         AppState.addBalance('arbitrum', 'ETH', -0.0001);
+        AppState.addFee && AppState.addFee('Network gas', 'HyperLivid deposit', 0.0001 * (state.prices.ETH || 3200));
         AppState.setHyperliquidBalance((state.hyperliquidBalance || 0) + numAmt);
         AppState.addHistory({ type: 'Deposit', desc: `${numAmt} USDC → HyperLivid`, status: 'Success' });
       });
@@ -173,7 +206,7 @@ function DepositModal({ state, onClose, onSuccess }) {
 }
 
 // ── Success Modal ─────────────────────────────────────────────
-function SuccessModal({ amount, onClose }) {
+function SuccessModal({ amount, state, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110 }}>
       <div style={{ background: HL.panel, border: '1px solid rgba(0,232,162,.2)', borderRadius: 20, padding: 40, width: 380, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -190,6 +223,7 @@ function SuccessModal({ amount, onClose }) {
           <div>✓ Sourced ETH gas for Arbitrum</div>
           <div>✓ Signed deposit on HyperLivid</div>
         </div>
+        <FeeSummary state={state} deliveredUsd={amount} />
         <button onClick={onClose} style={{ padding: 14, borderRadius: 12, border: 'none', background: HL.green, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Close</button>
       </div>
     </div>
@@ -456,7 +490,7 @@ function DAppPanel({ onEarnClick }) {
       </div>
 
       {showDeposit && <DepositModal state={state} onClose={() => setShowDeposit(false)} onSuccess={amt => { setShowDeposit(false); setSuccessAmt(amt); }} />}
-      {successAmt !== null && <SuccessModal amount={successAmt} onClose={() => setSuccessAmt(null)} />}
+      {successAmt !== null && <SuccessModal amount={successAmt} state={state} onClose={() => setSuccessAmt(null)} />}
     </div>
   );
 }

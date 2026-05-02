@@ -23,8 +23,13 @@
     base: 5, optimism: 4, polygon: 7,
   };
 
+  function totalWalletUsd(balances) {
+    return Object.entries(balances).reduce((sum, [, toks]) =>
+      sum + Object.entries(toks).reduce((s, [tok, amt]) => s + (PRICES[tok] || 1) * amt, 0), 0);
+  }
+
   function fresh() {
-    return {
+    const state = {
       balances: {
         solana:   { USDC: 15, SOL: 0, BONK: 0, WIF: 0, JTO: 0 },
         arbitrum: { USDC: 0, ETH: 0, ARB: 0 },
@@ -46,6 +51,12 @@
       prices: PRICES,
       gasTokens: GAS_TOKENS,
     };
+    state.sessionStats = {
+      fundsIntroducedUsd: totalWalletUsd(state.balances),
+      bankAddedUsd: 0,
+      fees: [],
+    };
+    return state;
   }
 
   let _state = fresh();
@@ -59,6 +70,10 @@
       coinbaseHoldings: { ..._state.coinbaseHoldings },
       aaveSupplied: { ..._state.aaveSupplied },
       aaveBorrowed: { ..._state.aaveBorrowed },
+      sessionStats: {
+        ..._state.sessionStats,
+        fees: [...(_state.sessionStats?.fees || [])],
+      },
     };
   }
 
@@ -100,6 +115,10 @@
 
     addCoinbaseBalance(delta) {
       _state.coinbaseBalance = Math.max(0, _state.coinbaseBalance + delta);
+      if (delta > 0) {
+        _state.sessionStats.bankAddedUsd += delta;
+        _state.sessionStats.fundsIntroducedUsd += delta;
+      }
       notify();
     },
 
@@ -119,6 +138,13 @@
       _state.balances[chain][token] = (_state.balances[chain][token] || 0) + receive;
       notify();
       return true;
+    },
+
+    addFee(kind, label, amountUsd) {
+      const amount = Math.max(0, parseFloat(amountUsd) || 0);
+      if (amount <= 0) return;
+      _state.sessionStats.fees.push({ kind, label, amountUsd: amount });
+      notify();
     },
 
     setConnected(val) {

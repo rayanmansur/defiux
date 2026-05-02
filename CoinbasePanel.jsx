@@ -157,6 +157,7 @@ function BuyCryptoStep({ cbBalance, holdings, onDone, ethNetwork = 'Arbitrum' })
     await new Promise(r => setTimeout(r, 2500));
     AppState.addCoinbaseBalance(-num);
     AppState.addCoinbaseHolding(token, receive);
+    AppState.addFee && AppState.addFee('Coinbase fee', `${token} purchase`, fee);
     AppState.addHistory({ type: 'Buy', desc: `${fmtUsd(num)} → ${fmt(receive)} ${token} (Coinbase)`, status: 'Success' });
     setPhase('done');
     setTimeout(() => onDone(), 600);
@@ -263,6 +264,7 @@ function SendToWalletStep({ holdings, onDone, ethNetwork = 'Arbitrum' }) {
     await new Promise(r => setTimeout(r, 2000));
     const ok = AppState.sendCoinbaseToWallet(token, num, receive);
     if (!ok) { setErr('Transfer failed'); setPhase('idle'); return; }
+    AppState.addFee && AppState.addFee('Withdrawal fee', `${token} to ${chainMap[token]}`, CB_WITHDRAW_FEE);
     AppState.addHistory({ type: 'Withdraw', desc: `${fmt(receive)} ${token} → self-custody wallet`, status: 'Success' });
     setPhase('done');
     setTimeout(() => onDone(), 600);
