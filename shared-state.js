@@ -8,6 +8,9 @@
     BONK: 0.000018, WIF: 1.8, JTO: 2.4,
     UNI: 7.2, LINK: 13.5,
     BRETT: 0.12, QUICK: 0.05,
+    cbBTC: 65000, weETH: 3280, wstETH: 3750,
+    EURC: 1.08, GHO: 1.0, cbETH: 3260,
+    AAVE: 92, ezETH: 3290,
   };
 
   // Gas token per chain

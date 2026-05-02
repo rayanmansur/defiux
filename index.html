@@ -130,11 +130,10 @@
       border-radius: 8px;
       background: var(--panel);
       color: inherit;
-      text-decoration: none;
     }
 
     .choice:hover,
-    .choice:focus-visible {
+    .choice:focus-within {
       border-color: var(--blue);
       outline: none;
     }
@@ -189,6 +188,12 @@
       padding-top: 12px;
     }
 
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
     .button {
       display: flex;
       align-items: center;
@@ -199,9 +204,16 @@
       color: #041014;
       font-size: 14px;
       font-weight: 800;
+      text-decoration: none;
     }
 
-    .choice:nth-child(2) .button {
+    .button.secondary {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .choice:nth-child(2) .button.primary {
       background: linear-gradient(135deg, var(--purple), var(--blue));
       color: #fff;
     }
@@ -226,6 +238,10 @@
 
       .choice {
         min-height: 0;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -256,7 +272,7 @@
     </section>
 
     <section class="choices" aria-label="Scenarios">
-      <a class="choice" href="/hyperliquid.html">
+      <article class="choice">
         <div class="choice-top">
           <span class="icon">H</span>
           <span class="route">/hyperliquid.html</span>
@@ -269,10 +285,13 @@
         <div class="goal">
           Goal: move funds to the right network, handle gas, and deposit into the app.
         </div>
-        <span class="button">Start perps scenario</span>
-      </a>
+        <div class="actions">
+          <a class="button primary" href="/hyperliquid.html">Traditional wallet</a>
+          <a class="button secondary" href="/nimbus-hyperliquid.html">Nimbus wallet</a>
+        </div>
+      </article>
 
-      <a class="choice" href="/aave.html">
+      <article class="choice">
         <div class="choice-top">
           <span class="icon">W</span>
           <span class="route">/aave.html</span>
@@ -284,8 +303,11 @@
         <div class="goal">
           Goal: get assets onto Base, handle gas, connect the simulated wallet, and supply funds.
         </div>
-        <span class="button">Start yield scenario</span>
-      </a>
+        <div class="actions">
+          <a class="button primary" href="/aave.html">Traditional wallet</a>
+          <a class="button secondary" href="/nimbus-aave.html">Nimbus wallet</a>
+        </div>
+      </article>
     </section>
 
     <footer>
