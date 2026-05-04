@@ -174,9 +174,19 @@
       min-height: 220px;
     }
 
+    .choice.desktop {
+      grid-column: 1 / -1;
+      min-height: 220px;
+    }
+
     .choice.integrated .icon {
       background: rgba(70, 188, 140, 0.16);
       color: var(--green);
+    }
+
+    .choice.desktop .icon {
+      background: rgba(46, 186, 198, 0.14);
+      color: var(--blue);
     }
 
     .route {
@@ -239,9 +249,18 @@
       grid-template-columns: minmax(180px, 260px);
     }
 
+    .choice.desktop .actions {
+      grid-template-columns: minmax(180px, 260px);
+    }
+
     .choice.integrated .button.primary {
       background: var(--green);
       color: #03110b;
+    }
+
+    .choice.desktop .button.primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff;
     }
 
     footer {
@@ -270,11 +289,19 @@
         grid-column: auto;
       }
 
+      .choice.desktop {
+        grid-column: auto;
+      }
+
       .actions {
         grid-template-columns: 1fr;
       }
 
       .choice.integrated .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .choice.desktop .actions {
         grid-template-columns: 1fr;
       }
     }
@@ -359,6 +386,24 @@
         </div>
         <div class="actions">
           <a class="button primary" href="/integrated.html">Open integrated flow</a>
+        </div>
+      </article>
+
+      <article class="choice desktop">
+        <div class="choice-top">
+          <span class="icon">D</span>
+          <span class="route">/Nimbus.html</span>
+        </div>
+        <h2>Nimbus desktop super-app</h2>
+        <p>
+          A standalone desktop-oriented Nimbus UX with a browser-style shell, portfolio dashboard,
+          app grid, HyperLivid trading, Waave lending, and facilitator settings.
+        </p>
+        <div class="goal">
+          Goal: use the desktop super-app flow where app actions are handled inside Nimbus without opening the tablet interface.
+        </div>
+        <div class="actions">
+          <a class="button primary" href="/Nimbus.html">Open desktop flow</a>
         </div>
       </article>
     </section>
