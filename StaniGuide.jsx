@@ -4,6 +4,8 @@ const STANI_SPRITES = {
   talking: 'stani/stani-talking-sprite.png',
 };
 
+const STANI_POINTER_CURSOR = 'url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer';
+
 const STANI_DIALOGUE = {
   traditional: [
     { text: 'HELLO. WELCOME TO THE WAAVE SIMULATOR.' },
@@ -172,8 +174,12 @@ const STANI_STYLE = `
     font-weight: 900;
     line-height: 1.38;
     text-transform: uppercase;
-    text-wrap: balance;
     user-select: none;
+    white-space: pre-wrap;
+  }
+
+  .stani-guide-hidden-char {
+    color: transparent;
   }
 
   .stani-guide-controls {
@@ -233,13 +239,15 @@ const STANI_STYLE = `
     position: fixed;
     left: 14px;
     bottom: 10px;
-    z-index: 320;
+    z-index: 840;
     width: clamp(58px, 7vw, 92px);
     height: auto;
     image-rendering: pixelated;
     filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.24));
     user-select: none;
     opacity: 0.96;
+    cursor: url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer !important;
+    pointer-events: auto;
   }
 
   @media (max-width: 720px) {
@@ -267,7 +275,6 @@ const STANI_STYLE = `
     .stani-guide-text {
       font-size: 15px;
       line-height: 1.35;
-      text-wrap: auto;
     }
 
     .stani-guide-controls {
@@ -353,6 +360,13 @@ function StaniGuide({ mode = 'traditional' }) {
     setActive(false);
   }
 
+  function replayIntro() {
+    setLineIndex(0);
+    setVisibleChars(0);
+    setMouthOpen(false);
+    setActive(true);
+  }
+
   function advance() {
     if (!lineComplete) {
       setVisibleChars(currentLine.length);
@@ -369,6 +383,14 @@ function StaniGuide({ mode = 'traditional' }) {
   const sprite = active
     ? (lineComplete ? STANI_SPRITES.smile : mouthOpen ? STANI_SPRITES.talking : STANI_SPRITES.rest)
     : STANI_SPRITES.smile;
+
+  function renderTypewriterText() {
+    return Array.from(currentLine).map((char, i) => (
+      <span key={i} className={i < visibleChars ? undefined : 'stani-guide-hidden-char'}>
+        {char}
+      </span>
+    ));
+  }
 
   return (
     <>
@@ -399,7 +421,7 @@ function StaniGuide({ mode = 'traditional' }) {
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') advance(); }}>
               <div>
                 <div className="stani-guide-name">Stani</div>
-                <div className="stani-guide-text">{currentLine.slice(0, visibleChars)}</div>
+                <div className="stani-guide-text" aria-label={currentLine}>{renderTypewriterText()}</div>
               </div>
               <div className="stani-guide-controls">
                 <div className="stani-guide-hint">
@@ -431,7 +453,16 @@ function StaniGuide({ mode = 'traditional' }) {
           </div>
         </div>
       ) : (
-        <img className="stani-guide-corner" src={STANI_SPRITES.smile} alt="" />
+        <img
+          className="stani-guide-corner"
+          src={STANI_SPRITES.smile}
+          alt="Replay Stani introduction"
+          role="button"
+          tabIndex="0"
+          onClick={replayIntro}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') replayIntro(); }}
+          style={{ cursor: STANI_POINTER_CURSOR, pointerEvents: 'auto' }}
+        />
       )}
     </>
   );

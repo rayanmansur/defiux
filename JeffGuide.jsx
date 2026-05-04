@@ -4,6 +4,8 @@ const JEFF_SPRITES = {
   speaking: 'jeff/jeff-speaking-1-sprite.png',
 };
 
+const JEFF_POINTER_CURSOR = 'url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer';
+
 const JEFF_DIALOGUE = {
   traditional: [
     { text: 'OH! HELLO. WELCOME TO THE HYPERLIVID SIMULATOR.' },
@@ -173,8 +175,12 @@ const JEFF_STYLE = `
     font-weight: 900;
     line-height: 1.38;
     text-transform: uppercase;
-    text-wrap: balance;
     user-select: none;
+    white-space: pre-wrap;
+  }
+
+  .jeff-guide-hidden-char {
+    color: transparent;
   }
 
   .jeff-guide-controls {
@@ -237,13 +243,15 @@ const JEFF_STYLE = `
     position: fixed;
     left: 14px;
     bottom: 10px;
-    z-index: 320;
+    z-index: 840;
     width: clamp(58px, 7vw, 92px);
     height: auto;
     image-rendering: pixelated;
     filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.24));
     user-select: none;
     opacity: 0.96;
+    cursor: url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer !important;
+    pointer-events: auto;
   }
 
   @media (max-width: 720px) {
@@ -271,7 +279,6 @@ const JEFF_STYLE = `
     .jeff-guide-text {
       font-size: 15px;
       line-height: 1.35;
-      text-wrap: auto;
     }
 
     .jeff-guide-controls {
@@ -366,6 +373,13 @@ function JeffGuide({ mode = 'traditional' }) {
     setActive(false);
   }
 
+  function replayIntro() {
+    setLineIndex(0);
+    setVisibleChars(0);
+    setMouthOpen(false);
+    setActive(true);
+  }
+
   function advance() {
     if (!lineComplete) {
       setVisibleChars(currentLine.length);
@@ -384,6 +398,14 @@ function JeffGuide({ mode = 'traditional' }) {
   const sprite = active
     ? (lineComplete ? JEFF_SPRITES.smile : mouthOpen ? JEFF_SPRITES.speaking : JEFF_SPRITES.closed)
     : JEFF_SPRITES.smile;
+
+  function renderTypewriterText() {
+    return Array.from(currentLine).map((char, i) => (
+      <span key={i} className={i < visibleChars ? undefined : 'jeff-guide-hidden-char'}>
+        {char}
+      </span>
+    ));
+  }
 
   return (
     <>
@@ -414,7 +436,7 @@ function JeffGuide({ mode = 'traditional' }) {
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') advance(); }}>
               <div>
                 <div className="jeff-guide-name">Jeff</div>
-                <div className="jeff-guide-text">{currentLine.slice(0, visibleChars)}</div>
+                <div className="jeff-guide-text" aria-label={currentLine}>{renderTypewriterText()}</div>
               </div>
               <div className="jeff-guide-controls">
                 <div className="jeff-guide-hint">
@@ -446,7 +468,16 @@ function JeffGuide({ mode = 'traditional' }) {
           </div>
         </div>
       ) : (
-        <img className="jeff-guide-corner" src={JEFF_SPRITES.smile} alt="" />
+        <img
+          className="jeff-guide-corner"
+          src={JEFF_SPRITES.smile}
+          alt="Replay Jeff introduction"
+          role="button"
+          tabIndex="0"
+          onClick={replayIntro}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') replayIntro(); }}
+          style={{ cursor: JEFF_POINTER_CURSOR, pointerEvents: 'auto' }}
+        />
       )}
     </>
   );

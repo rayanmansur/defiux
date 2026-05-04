@@ -14,34 +14,56 @@ const NW = {
   red: '#ff5d73',
 };
 
+const NIMBUS_DEFAULT_CURSOR = 'url("uploads/cursors/hand-default-cursor.png") 18 8, default';
+const NIMBUS_POINTER_CURSOR = 'url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer';
+const NIMBUS_DISABLED_CURSOR = 'not-allowed';
+
 const NIMBUS_CURSOR_CSS = `
   .nimbus-wallet-cursor-scope,
   .nimbus-wallet-cursor-scope * {
-    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
+    cursor: url("uploads/cursors/hand-default-cursor.png") 18 8, default !important;
+  }
+
+  .nimbus-wallet-cursor-scope [style*="default"],
+  .nimbus-wallet-cursor-scope [style*="default"] * {
+    cursor: url("uploads/cursors/hand-default-cursor.png") 18 8, default !important;
   }
 
   .nimbus-wallet-cursor-scope button,
+  .nimbus-wallet-cursor-scope button *,
   .nimbus-wallet-cursor-scope a,
+  .nimbus-wallet-cursor-scope a *,
   .nimbus-wallet-cursor-scope label,
+  .nimbus-wallet-cursor-scope label *,
   .nimbus-wallet-cursor-scope select,
   .nimbus-wallet-cursor-scope input[type="button"],
   .nimbus-wallet-cursor-scope input[type="submit"],
   .nimbus-wallet-cursor-scope input[type="range"],
   .nimbus-wallet-cursor-scope input[type="checkbox"],
   .nimbus-wallet-cursor-scope [role="button"],
+  .nimbus-wallet-cursor-scope [role="button"] *,
   .nimbus-wallet-cursor-scope [onclick],
-  .nimbus-wallet-cursor-scope [style*="pointer"] {
-    cursor: var(--pointer-hand-cursor, url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer) !important;
+  .nimbus-wallet-cursor-scope [onclick] *,
+  .nimbus-wallet-cursor-scope [style*="pointer"],
+  .nimbus-wallet-cursor-scope [style*="pointer"] *,
+  .nimbus-wallet-cursor-scope .nimbus-clickable,
+  .nimbus-wallet-cursor-scope .nimbus-clickable *,
+  .nimbus-wallet-cursor-scope .nimbus-deposit-action,
+  .nimbus-wallet-cursor-scope .nimbus-deposit-action * {
+    cursor: url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer !important;
   }
 
-  .nimbus-wallet-cursor-scope [style*="not-allowed"] {
+  .nimbus-wallet-cursor-scope button:disabled,
+  .nimbus-wallet-cursor-scope button:disabled *,
+  .nimbus-wallet-cursor-scope [aria-disabled="true"],
+  .nimbus-wallet-cursor-scope [aria-disabled="true"] *,
+  .nimbus-wallet-cursor-scope [style*="not-allowed"],
+  .nimbus-wallet-cursor-scope [style*="not-allowed"] * {
     cursor: not-allowed !important;
   }
-
-  .nimbus-wallet-cursor-scope [style*="default"] {
-    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
-  }
 `;
+
+const NIMBUS_DEPOSIT_BUTTON_CLASS = 'nimbus-clickable nimbus-deposit-action';
 
 const NIMBUS_TOKENS = {
   USDC: { name: 'USD Coin', color: '#2775CA', letter: 'U' },
@@ -256,8 +278,8 @@ function NimbusRequestOverlay({ request }) {
         )}
       </div>
       <div style={{ display: 'flex', gap: 10, padding: 16, borderTop: '1px solid ' + NW.border }}>
-        <button onClick={request.onReject} style={{ flex: 1, padding: 14, borderRadius: 12, border: '1px solid ' + NW.border, background: 'none', color: NW.muted, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Reject</button>
-        <button onClick={request.onApprove} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: NW.blue, color: '#071018', fontSize: 14, fontWeight: 900, cursor: 'pointer' }}>{isSign ? 'Confirm' : 'Connect'}</button>
+        <button className="nimbus-clickable" onClick={request.onReject} style={{ flex: 1, padding: 14, borderRadius: 12, border: '1px solid ' + NW.border, background: 'none', color: NW.muted, fontSize: 14, fontWeight: 700, cursor: NIMBUS_POINTER_CURSOR }}>Reject</button>
+        <button className="nimbus-clickable" onClick={request.onApprove} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: NW.blue, color: '#071018', fontSize: 14, fontWeight: 900, cursor: NIMBUS_POINTER_CURSOR }}>{isSign ? 'Confirm' : 'Connect'}</button>
       </div>
     </div>
   );
@@ -399,7 +421,7 @@ function NimbusWalletPanel({ app }) {
     return (
       <>
         <div style={{ padding: '14px 12px 10px' }}>
-          <button onClick={openDepositFlow} style={{
+          <button className={NIMBUS_DEPOSIT_BUTTON_CLASS} onClick={openDepositFlow} style={{
             width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, rgba(53,200,240,.18), rgba(157,124,255,.14))',
             border: '1px solid rgba(53,200,240,.42)', borderRadius: 12, padding: 14, cursor: 'pointer',
             boxShadow: '0 10px 30px rgba(53,200,240,.08)',
@@ -424,7 +446,7 @@ function NimbusWalletPanel({ app }) {
             ['down', 'Receive'],
             ['clock', 'Activity'],
           ].map(([icon, label]) => (
-            <button key={label} onClick={() => label === 'Deposit' && openDepositFlow()} style={{
+            <button key={label} className={label === 'Deposit' ? NIMBUS_DEPOSIT_BUTTON_CLASS : undefined} onClick={() => label === 'Deposit' && openDepositFlow()} style={{
               height: 61, border: 'none', borderRadius: 9, background: NW.card, color: NW.muted,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               gap: 6, cursor: label === 'Deposit' ? 'pointer' : 'default',
@@ -464,7 +486,7 @@ function NimbusWalletPanel({ app }) {
   function renderDeposit() {
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
-        <button onClick={() => { setAmount(''); setScreen('home'); }} style={{ background: 'none', border: 'none', color: NW.blue, fontSize: 12, fontWeight: 800, cursor: 'pointer', marginBottom: 12 }}>Back to wallet</button>
+        <button className="nimbus-clickable" onClick={() => { setAmount(''); setScreen('home'); }} style={{ background: 'none', border: 'none', color: NW.blue, fontSize: 12, fontWeight: 800, cursor: 'pointer', marginBottom: 12 }}>Back to wallet</button>
         <div style={{ color: NW.text, fontSize: 20, fontWeight: 850, marginBottom: 6 }}>Deposit to {appName}</div>
         <div style={{ color: NW.muted, fontSize: 12, lineHeight: 1.55, marginBottom: 15 }}>
           Nimbus will lock your source funds and complete the action on {destName}. Fees are deducted from what arrives, so no separate native gas token is required.
@@ -474,7 +496,7 @@ function NimbusWalletPanel({ app }) {
           <div style={{ color: NW.soft, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>Pay with</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {availableTokens.map(([tok, bal]) => (
-              <button key={tok} onClick={() => { setSelectedToken(tok); if (app === 'waave' && WAAVE_DEPOSIT_TOKENS.includes(tok)) setDepositToken(tok); setAmount(''); }} style={{
+              <button key={tok} className={NIMBUS_DEPOSIT_BUTTON_CLASS} onClick={() => { setSelectedToken(tok); if (app === 'waave' && WAAVE_DEPOSIT_TOKENS.includes(tok)) setDepositToken(tok); setAmount(''); }} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10,
                 border: '1px solid ' + (token === tok ? NW.blue : NW.border),
                 background: token === tok ? 'rgba(53,200,240,.12)' : NW.card,
@@ -501,7 +523,7 @@ function NimbusWalletPanel({ app }) {
             <div style={{ color: NW.soft, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>Supply as</div>
             <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2 }}>
               {WAAVE_DEPOSIT_TOKENS.map(tok => (
-                <button key={tok} onClick={() => setDepositToken(tok)} style={{
+                <button key={tok} className={NIMBUS_DEPOSIT_BUTTON_CLASS} onClick={() => setDepositToken(tok)} style={{
                   border: '1px solid ' + (destToken === tok ? NW.blue : NW.border),
                   background: destToken === tok ? 'rgba(53,200,240,.12)' : NW.card,
                   color: destToken === tok ? NW.text : NW.muted,
@@ -516,7 +538,7 @@ function NimbusWalletPanel({ app }) {
         <div style={{ background: NW.card, border: '1px solid ' + NW.border, borderRadius: 12, padding: 14, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: NW.muted, fontSize: 11, marginBottom: 8 }}>
             <span>Amount</span>
-            <button onClick={() => setAmount(String(max))} style={{ background: 'none', border: 'none', color: NW.blue, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Max</button>
+            <button className="nimbus-clickable" onClick={() => setAmount(String(max))} style={{ background: 'none', border: 'none', color: NW.blue, fontSize: 11, fontWeight: 800, cursor: NIMBUS_POINTER_CURSOR }}>Max</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="number" min="0" max={max} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" style={{
@@ -565,11 +587,11 @@ function NimbusWalletPanel({ app }) {
           </div>
         )}
 
-        <button disabled={amt <= 0 || amt > max || feesExceedValue} onClick={startDeposit} style={{
+        <button className={NIMBUS_DEPOSIT_BUTTON_CLASS} disabled={amt <= 0 || amt > max || feesExceedValue} onClick={startDeposit} style={{
           width: '100%', height: 46, border: 'none', borderRadius: 10,
           background: amt > 0 && amt <= max && !feesExceedValue ? 'linear-gradient(135deg, #35c8f0, #9d7cff)' : NW.card,
           color: amt > 0 && amt <= max && !feesExceedValue ? '#071018' : NW.soft,
-          fontSize: 14, fontWeight: 900, cursor: amt > 0 && amt <= max && !feesExceedValue ? 'pointer' : 'not-allowed',
+          fontSize: 14, fontWeight: 900, cursor: amt > 0 && amt <= max && !feesExceedValue ? NIMBUS_POINTER_CURSOR : NIMBUS_DISABLED_CURSOR,
         }}>Deposit with Nimbus</button>
       </div>
     );
@@ -633,7 +655,7 @@ function NimbusWalletPanel({ app }) {
           </div>
         </div>
         {fulfillDone && (
-          <button onClick={() => { setScreen('home'); setTx(null); setAmount(''); }} style={{
+          <button className="nimbus-clickable" onClick={() => { setScreen('home'); setTx(null); setAmount(''); }} style={{
             width: '100%', height: 44, border: 'none', borderRadius: 10, background: NW.green,
             color: '#071018', fontSize: 14, fontWeight: 900, cursor: 'pointer',
           }}>Done</button>

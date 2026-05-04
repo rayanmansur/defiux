@@ -216,7 +216,7 @@ function SuccessModal({ amount, state, onClose }) {
         <div style={{ color: HL.green, fontSize: 15, fontWeight: 600 }}>{amount} USDC deposited to HyperLivid</div>
         <div style={{ color: HL.muted, fontSize: 13, lineHeight: 1.8 }}>
           {isNimbus ? 'Nimbus completed the cross-chain DeFi flow:' : 'You navigated the full cross-chain DeFi flow:'}<br/>
-          {isNimbus && <strong style={{ color: HL.text }}>Nimbus Wallet -> HyperLivid</strong>}
+          {isNimbus && <strong style={{ color: HL.text }}>Nimbus Wallet -&gt; HyperLivid</strong>}
           {!isNimbus && (
           <strong style={{ color: HL.text }}>Coinbase → Solana → Arbitrum → HyperLivid</strong>
           )}
