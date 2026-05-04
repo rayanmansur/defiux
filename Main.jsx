@@ -179,7 +179,7 @@ function TabBar({ active, onChange }) {
         { id: 'hyperliquid', label: 'HyperLivid', icon: '🌊' },
         { id: 'coinbase',    label: 'Coinbase',    icon: '🏦' },
       ].map(tab => (
-        <button key={tab.id} onClick={() => onChange(tab.id)} style={{
+        <button key={tab.id} data-jeff-target={tab.id === 'coinbase' ? 'coinbase-tab' : 'hyperlivid-tab'} onClick={() => onChange(tab.id)} style={{
           display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px',
           height: '100%', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
           background: active === tab.id ? A.panel : 'transparent',
@@ -216,19 +216,20 @@ function App() {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
         {/* Left: active tab content */}
-        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div data-jeff-target="hyperlivid-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
           {tab === 'hyperliquid' && <DAppPanel onEarnClick={() => setAdminOpen(true)} />}
           {tab === 'coinbase'    && <CoinbasePanel />}
         </div>
 
         {/* Right: persistent wallet */}
-        <div style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
+        <div data-jeff-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
           <WalletPanel />
         </div>
       </div>
 
       {/* Admin modal */}
       <AdminPanel visible={adminOpen} onClose={() => setAdminOpen(false)} />
+      <JeffGuide mode="traditional" />
     </div>
   );
 }

@@ -6,7 +6,7 @@ function NimbusHyperTabBar({ active, onChange }) {
         { id: 'hyperliquid', label: 'HyperLivid', icon: 'HL' },
         { id: 'coinbase', label: 'Coinbase', icon: 'CB' },
       ].map(tab => (
-        <button key={tab.id} onClick={() => onChange(tab.id)} style={{
+        <button key={tab.id} data-jeff-target={tab.id === 'coinbase' ? 'coinbase-tab' : 'hyperlivid-tab'} onClick={() => onChange(tab.id)} style={{
           display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px', height: '100%',
           border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
           background: active === tab.id ? '#13141a' : 'transparent',
@@ -36,15 +36,16 @@ function NimbusHyperApp() {
     }}>
       <NimbusHyperTabBar active={tab} onChange={setTab} />
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div data-jeff-target="hyperlivid-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
           {tab === 'hyperliquid' && <DAppPanel onEarnClick={() => setAdminOpen(true)} />}
           {tab === 'coinbase' && <CoinbasePanel />}
         </div>
-        <div style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#171922' }}>
+        <div data-jeff-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#171922' }}>
           <NimbusWalletPanel app="hyperlivid" />
         </div>
       </div>
       <NimbusScenarioSetupPanel visible={adminOpen} onClose={() => setAdminOpen(false)} app="hyperlivid" />
+      <JeffGuide mode="nimbus" />
     </div>
   );
 }
