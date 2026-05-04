@@ -12,9 +12,12 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      cursor: var(--default-hand-cursor) !important;
     }
 
     :root {
+      --default-hand-cursor: url("uploads/cursors/hand-default-cursor.png") 18 8, default;
+      --pointer-hand-cursor: url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer;
       color-scheme: dark;
       --bg: #0b0c12;
       --panel: #171923;
@@ -26,6 +29,10 @@
       --blue: #2ebac6;
       --green: #46bc8c;
       --purple: #b6509e;
+    }
+
+    button, a, label, select, input[type=button], input[type=submit], input[type=range], input[type=checkbox], [role="button"], [onclick], [style*="pointer"] {
+      cursor: var(--pointer-hand-cursor) !important;
     }
 
     html,
@@ -247,6 +254,7 @@
   </style>
 </head>
 <body>
+  <script src="click-feedback.js?v=1"></script>
   <main>
     <header>
       <div class="label">Safe demo</div>

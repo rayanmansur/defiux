@@ -14,6 +14,35 @@ const NW = {
   red: '#ff5d73',
 };
 
+const NIMBUS_CURSOR_CSS = `
+  .nimbus-wallet-cursor-scope,
+  .nimbus-wallet-cursor-scope * {
+    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
+  }
+
+  .nimbus-wallet-cursor-scope button,
+  .nimbus-wallet-cursor-scope a,
+  .nimbus-wallet-cursor-scope label,
+  .nimbus-wallet-cursor-scope select,
+  .nimbus-wallet-cursor-scope input[type="button"],
+  .nimbus-wallet-cursor-scope input[type="submit"],
+  .nimbus-wallet-cursor-scope input[type="range"],
+  .nimbus-wallet-cursor-scope input[type="checkbox"],
+  .nimbus-wallet-cursor-scope [role="button"],
+  .nimbus-wallet-cursor-scope [onclick],
+  .nimbus-wallet-cursor-scope [style*="pointer"] {
+    cursor: var(--pointer-hand-cursor, url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer) !important;
+  }
+
+  .nimbus-wallet-cursor-scope [style*="not-allowed"] {
+    cursor: not-allowed !important;
+  }
+
+  .nimbus-wallet-cursor-scope [style*="default"] {
+    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
+  }
+`;
+
 const NIMBUS_TOKENS = {
   USDC: { name: 'USD Coin', color: '#2775CA', letter: 'U' },
   SOL: { name: 'Solana', color: '#9945FF', letter: 'S' },
@@ -614,7 +643,8 @@ function NimbusWalletPanel({ app }) {
   }
 
   return (
-    <div style={{ height: '100%', width: '100%', background: NW.bg, color: NW.text, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', -apple-system, sans-serif", overflow: 'hidden', position: 'relative' }}>
+    <div className="nimbus-wallet-cursor-scope" style={{ height: '100%', width: '100%', background: NW.bg, color: NW.text, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', -apple-system, sans-serif", overflow: 'hidden', position: 'relative' }}>
+      <style>{NIMBUS_CURSOR_CSS}</style>
       {renderHeader()}
       {screen === 'home' && renderHome()}
       {screen === 'deposit' && renderDeposit()}

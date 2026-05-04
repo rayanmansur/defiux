@@ -7,6 +7,35 @@ const W = {
   text: '#ffffff', muted: '#8b8ba0', green: '#52e39e', red: '#f05252',
 };
 
+const PHANTOM_CURSOR_CSS = `
+  .phantom-wallet-cursor-scope,
+  .phantom-wallet-cursor-scope * {
+    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
+  }
+
+  .phantom-wallet-cursor-scope button,
+  .phantom-wallet-cursor-scope a,
+  .phantom-wallet-cursor-scope label,
+  .phantom-wallet-cursor-scope select,
+  .phantom-wallet-cursor-scope input[type="button"],
+  .phantom-wallet-cursor-scope input[type="submit"],
+  .phantom-wallet-cursor-scope input[type="range"],
+  .phantom-wallet-cursor-scope input[type="checkbox"],
+  .phantom-wallet-cursor-scope [role="button"],
+  .phantom-wallet-cursor-scope [onclick],
+  .phantom-wallet-cursor-scope [style*="pointer"] {
+    cursor: var(--pointer-hand-cursor, url("uploads/cursors/hand-pointer-cursor.png") 48 6, pointer) !important;
+  }
+
+  .phantom-wallet-cursor-scope [style*="not-allowed"] {
+    cursor: not-allowed !important;
+  }
+
+  .phantom-wallet-cursor-scope [style*="default"] {
+    cursor: var(--default-hand-cursor, url("uploads/cursors/hand-default-cursor.png") 18 8, default) !important;
+  }
+`;
+
 const CHAIN_META = {
   solana:   { name: 'Solana',   color: '#9945FF', gasToken: 'SOL',  short: 'S' },
   arbitrum: { name: 'Arbitrum', color: '#12AAFF', gasToken: 'ETH',  short: 'A' },
@@ -633,11 +662,12 @@ function WalletPanel() {
   const showBack = ['swap','send','receive','history'].includes(screen);
 
   return (
-    <div style={{
+    <div className="phantom-wallet-cursor-scope" style={{
       width: '100%', height: '100%', background: W.bg, display: 'flex', flexDirection: 'column',
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       position: 'relative', overflow: 'hidden',
     }}>
+      <style>{PHANTOM_CURSOR_CSS}</style>
       {/* Title bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#15151e', borderBottom: '1px solid ' + W.border, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
