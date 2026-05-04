@@ -347,6 +347,7 @@ function FeeSummary({ state, deliveredUsd }) {
 
 function SupplySuccessModal({ amount, token, state, onClose }) {
   const deliveredUsd = usdVal(state.prices, token, parseFloat(amount) || 0);
+  const isNimbus = state.completedFlow?.source === 'nimbus';
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110 }}>
       <div style={{
@@ -359,15 +360,30 @@ function SupplySuccessModal({ amount, token, state, onClose }) {
           {typeof amount === 'number' ? amount.toFixed(4) : amount} {token} supplied to Waave
         </div>
         <div style={{ color: AV.muted, fontSize: 13, lineHeight: 1.8 }}>
-          You navigated the full cross-chain DeFi flow:<br/>
+          {isNimbus ? 'Nimbus completed the cross-chain DeFi flow:' : 'You navigated the full cross-chain DeFi flow:'}<br/>
+          {isNimbus && <strong style={{ color: AV.text }}>Nimbus Wallet -> Waave</strong>}
+          {!isNimbus && (
           <strong style={{ color: AV.text }}>Coinbase → Wallet → Base → Waave</strong>
+          )}
         </div>
         <div style={{ background: AV.bg, borderRadius: 12, padding: 14, fontSize: 12, color: AV.muted, textAlign: 'left', lineHeight: 2 }}>
+          {isNimbus ? (
+            <>
+              <div>Done Connected Nimbus wallet</div>
+              <div>Done Locked source funds</div>
+              <div>Done Paid source-chain gas from the source token</div>
+              <div>Done Fulfilled supply on Waave</div>
+              <div>Done Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || 'N/A'}% APY on Waave</div>
+            </>
+          ) : (
+            <>
           <div>✓ Funded gas via Coinbase</div>
           <div>✓ Bridged assets to Base network</div>
           <div>✓ Connected wallet to Waave</div>
           <div>✓ Signed supply transaction</div>
           <div>✓ Earning {AV.green && ''}{SUPPLY_ASSETS.find(a=>a.token===token)?.apy?.toFixed(2) || '—'}% APY on Waave</div>
+            </>
+          )}
         </div>
         <FeeSummary state={state} deliveredUsd={deliveredUsd} />
         <button onClick={onClose} style={{
@@ -755,8 +771,17 @@ function AavePanel({ onAdminOpen }) {
   const [borrowModal, setBorrowModal] = useState(null);
   const [toast, setToast]             = useState(null);
   const [successSupply, setSuccessSupply] = useState(null); // {amount, token}
+  const completedFlowRef = useRef(null);
 
   useEffect(() => AppState.subscribe(setState), []);
+
+  useEffect(() => {
+    const flow = state.completedFlow;
+    if (!flow || flow.app !== 'waave' || flow.source !== 'nimbus' || completedFlowRef.current === flow.id) return;
+    completedFlowRef.current = flow.id;
+    setSupplyModal(null);
+    setSuccessSupply({ amount: flow.amount, token: flow.token });
+  }, [state.completedFlow]);
 
   async function handleConnect() {
     try { await AppState.requestConnect('Waave'); } catch (e) {}
@@ -825,7 +850,7 @@ function AavePanel({ onAdminOpen }) {
           amount={successSupply.amount}
           token={successSupply.token}
           state={state}
-          onClose={() => setSuccessSupply(null)}
+          onClose={() => { setSuccessSupply(null); AppState.clearFlowComplete && AppState.clearFlowComplete(); }}
         />
       )}
     </div>

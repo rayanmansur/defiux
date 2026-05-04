@@ -207,6 +207,7 @@ function DepositModal({ state, onClose, onSuccess }) {
 
 // ── Success Modal ─────────────────────────────────────────────
 function SuccessModal({ amount, state, onClose }) {
+  const isNimbus = state.completedFlow?.source === 'nimbus';
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110 }}>
       <div style={{ background: HL.panel, border: '1px solid rgba(0,232,162,.2)', borderRadius: 20, padding: 40, width: 380, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -214,14 +215,28 @@ function SuccessModal({ amount, state, onClose }) {
         <div style={{ color: HL.text, fontWeight: 800, fontSize: 22 }}>Demo Complete!</div>
         <div style={{ color: HL.green, fontSize: 15, fontWeight: 600 }}>{amount} USDC deposited to HyperLivid</div>
         <div style={{ color: HL.muted, fontSize: 13, lineHeight: 1.8 }}>
-          You navigated the full cross-chain DeFi flow:<br/>
+          {isNimbus ? 'Nimbus completed the cross-chain DeFi flow:' : 'You navigated the full cross-chain DeFi flow:'}<br/>
+          {isNimbus && <strong style={{ color: HL.text }}>Nimbus Wallet -> HyperLivid</strong>}
+          {!isNimbus && (
           <strong style={{ color: HL.text }}>Coinbase → Solana → Arbitrum → HyperLivid</strong>
+          )}
         </div>
         <div style={{ background: HL.bg, borderRadius: 12, padding: 14, fontSize: 12, color: HL.muted, textAlign: 'left', lineHeight: 2 }}>
+          {isNimbus ? (
+            <>
+              <div>Done Connected Nimbus wallet</div>
+              <div>Done Locked source funds</div>
+              <div>Done Paid source-chain gas from the source token</div>
+              <div>Done Fulfilled deposit on HyperLivid</div>
+            </>
+          ) : (
+            <>
           <div>✓ Funded gas via Coinbase</div>
           <div>✓ Bridged USDC: Solana → Arbitrum</div>
           <div>✓ Sourced ETH gas for Arbitrum</div>
           <div>✓ Signed deposit on HyperLivid</div>
+            </>
+          )}
         </div>
         <FeeSummary state={state} deliveredUsd={amount} />
         <button onClick={onClose} style={{ padding: 14, borderRadius: 12, border: 'none', background: HL.green, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Close</button>
@@ -438,9 +453,18 @@ function DAppPanel({ onEarnClick }) {
   const [showDeposit, setShowDeposit] = useState(false);
   const [successAmt, setSuccessAmt]   = useState(null);
   const containerRef = useRef(null);
+  const completedFlowRef = useRef(null);
   const [chartW, setChartW]     = useState(600);
 
   useEffect(() => AppState.subscribe(setState), []);
+
+  useEffect(() => {
+    const flow = state.completedFlow;
+    if (!flow || flow.app !== 'hyperlivid' || flow.source !== 'nimbus' || completedFlowRef.current === flow.id) return;
+    completedFlowRef.current = flow.id;
+    setShowDeposit(false);
+    setSuccessAmt(flow.amount);
+  }, [state.completedFlow]);
 
   useEffect(() => {
     const ro = new ResizeObserver(e => { const w = e[0]?.contentRect.width; if (w) setChartW(w); });
@@ -490,7 +514,7 @@ function DAppPanel({ onEarnClick }) {
       </div>
 
       {showDeposit && <DepositModal state={state} onClose={() => setShowDeposit(false)} onSuccess={amt => { setShowDeposit(false); setSuccessAmt(amt); }} />}
-      {successAmt !== null && <SuccessModal amount={successAmt} state={state} onClose={() => setSuccessAmt(null)} />}
+      {successAmt !== null && <SuccessModal amount={successAmt} state={state} onClose={() => { setSuccessAmt(null); AppState.clearFlowComplete && AppState.clearFlowComplete(); }} />}
     </div>
   );
 }

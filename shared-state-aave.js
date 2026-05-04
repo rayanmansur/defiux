@@ -19,8 +19,12 @@
   };
 
   const DEFAULT_SPEEDS = {
-    solana: 4, arbitrum: 6, ethereum: 14,
-    base: 5, optimism: 4, polygon: 7,
+    solana:   2,
+    arbitrum: 3,
+    ethereum: 10,
+    base:     3,
+    optimism: 2,
+    polygon:  4,
   };
 
   function totalWalletUsd(balances) {
@@ -47,6 +51,7 @@
       walletConnected: false,
       pendingRequest: null,
       pendingTx: null,
+      completedFlow: null,
       txHistory: [],
       prices: PRICES,
       gasTokens: GAS_TOKENS,
@@ -167,6 +172,16 @@
     },
     aaveRepay(token, amount) {
       _state.aaveBorrowed[token] = Math.max(0, (_state.aaveBorrowed[token] || 0) - amount);
+      notify();
+    },
+
+    setFlowComplete(flow) {
+      _state.completedFlow = flow ? { id: Date.now(), ...flow } : null;
+      notify();
+    },
+
+    clearFlowComplete() {
+      _state.completedFlow = null;
       notify();
     },
 

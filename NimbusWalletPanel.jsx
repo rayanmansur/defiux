@@ -48,6 +48,15 @@ const CHAIN_NAMES = {
 };
 
 const WAAVE_DEPOSIT_TOKENS = ['USDC', 'cbBTC', 'weETH', 'wstETH', 'EURC', 'cbETH', 'GHO', 'AAVE', 'ezETH'];
+const NIMBUS_FEE_PCT = 0.01;
+const NIMBUS_SOURCE_GAS_USD = {
+  solana: 0.0021,
+  arbitrum: 0.08,
+  ethereum: 1.75,
+  base: 0.04,
+  optimism: 0.03,
+  polygon: 0.01,
+};
 
 function nfmt(n, dec = 4) {
   const x = parseFloat(n) || 0;
@@ -57,7 +66,10 @@ function nfmt(n, dec = 4) {
 }
 
 function nfmtUsd(n) {
-  return '$' + (parseFloat(n) || 0).toFixed(2);
+  const x = parseFloat(n) || 0;
+  if (x === 0) return '$0.00';
+  if (x < 0.01) return '<$0.01';
+  return '$' + x.toFixed(2);
 }
 
 function aggregateBalances(state) {
@@ -76,6 +88,10 @@ function totalUsd(tokens, prices) {
 
 function tokenUsd(state, token, amount) {
   return (parseFloat(amount) || 0) * ((state.prices && state.prices[token]) || 1);
+}
+
+function sourceGasUsd(chain) {
+  return NIMBUS_SOURCE_GAS_USD[chain] ?? 0.04;
 }
 
 function sourceOrderFor(app, state, destChain) {
@@ -249,13 +265,17 @@ function NimbusWalletPanel({ app }) {
     if (!tx || !tx.complete || completedRef.current) return;
     completedRef.current = true;
     const latest = AppState.state;
+    AppState.addFee && AppState.addFee('Nimbus fee', `${app === 'hyperlivid' ? 'HyperLivid' : 'Waave'} fulfillment`, tx.nimbusFeeUsd);
+    AppState.addFee && AppState.addFee('Source-chain gas', `${CHAIN_NAMES[tx.sourceChain] || 'Source'} transaction`, tx.sourceGasUsd);
     deductAcrossSources(latest, tx.sourceToken, tx.sourceAmount, app, tx.destChain);
     if (app === 'hyperlivid') {
       AppState.setHyperliquidBalance((latest.hyperliquidBalance || 0) + tx.destAmount);
       AppState.addHistory({ type: 'Nimbus Deposit', desc: `${nfmt(tx.sourceAmount)} ${tx.sourceToken} -> ${nfmt(tx.destAmount)} USDC on HyperLivid`, status: 'Success' });
+      AppState.setFlowComplete && AppState.setFlowComplete({ app: 'hyperlivid', amount: tx.destAmount, token: 'USDC', source: 'nimbus' });
     } else {
       AppState.aaveSupply(tx.destToken, tx.destAmount);
       AppState.addHistory({ type: 'Nimbus Supply', desc: `${nfmt(tx.sourceAmount)} ${tx.sourceToken} -> ${nfmt(tx.destAmount)} ${tx.destToken} on Waave`, status: 'Success' });
+      AppState.setFlowComplete && AppState.setFlowComplete({ app: 'waave', amount: tx.destAmount, token: tx.destToken, source: 'nimbus' });
     }
   }, [tx?.complete]);
 
@@ -276,9 +296,15 @@ function NimbusWalletPanel({ app }) {
   const max = totals[token] || 0;
   const amt = Math.max(0, Math.min(parseFloat(amount) || 0, max));
   const depositValueUsd = tokenUsd(state, token, amt);
-  const destAmount = depositValueUsd / (prices[destToken] || 1);
   const sources = getSources(state, token, app, destChain);
   const sourceChain = sources[0]?.chain || 'solana';
+  const nimbusFeeUsd = depositValueUsd * NIMBUS_FEE_PCT;
+  const sourceGasFeeUsd = amt > 0 ? Math.min(sourceGasUsd(sourceChain), depositValueUsd) : 0;
+  const totalFeeUsd = amt > 0 ? nimbusFeeUsd + sourceGasFeeUsd : 0;
+  const deliveredValueUsd = Math.max(0, depositValueUsd - totalFeeUsd);
+  const destAmount = deliveredValueUsd / (prices[destToken] || 1);
+  const sourceGasTokenAmount = sourceGasFeeUsd / (prices[token] || 1);
+  const feesExceedValue = amt > 0 && deliveredValueUsd <= 0;
   const sourceText = sources.length === 1 ? CHAIN_NAMES[sourceChain] : sources.length > 1 ? 'Unified balance' : 'No balance';
   const estimateSecs = (state.chainSpeeds?.[sourceChain] || 4) + (state.chainSpeeds?.[destChain] || 5);
 
@@ -302,7 +328,11 @@ function NimbusWalletPanel({ app }) {
       sourceAmount: amt,
       destToken,
       destAmount,
-      valueUsd: depositValueUsd,
+      sourceValueUsd: depositValueUsd,
+      valueUsd: deliveredValueUsd,
+      nimbusFeeUsd,
+      sourceGasUsd: sourceGasFeeUsd,
+      totalFeeUsd,
       sourceChain,
       destChain,
       depositProgress: 0,
@@ -348,7 +378,7 @@ function NimbusWalletPanel({ app }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
               <div>
                 <div style={{ color: NW.text, fontSize: 14, fontWeight: 900 }}>{state.walletConnected ? `Deposit to ${appName} with Nimbus` : 'Connect Nimbus to deposit'}</div>
-                <div style={{ color: NW.muted, fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>One wallet action. No gas, bridge, or manual swap.</div>
+                <div style={{ color: NW.muted, fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>One wallet action. No native gas token, bridge, or manual swap.</div>
               </div>
               <span style={{ color: '#071018', background: NW.green, borderRadius: 8, padding: '7px 9px', fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{state.walletConnected ? 'Start' : 'Connect'}</span>
             </div>
@@ -408,7 +438,7 @@ function NimbusWalletPanel({ app }) {
         <button onClick={() => { setAmount(''); setScreen('home'); }} style={{ background: 'none', border: 'none', color: NW.blue, fontSize: 12, fontWeight: 800, cursor: 'pointer', marginBottom: 12 }}>Back to wallet</button>
         <div style={{ color: NW.text, fontSize: 20, fontWeight: 850, marginBottom: 6 }}>Deposit to {appName}</div>
         <div style={{ color: NW.muted, fontSize: 12, lineHeight: 1.55, marginBottom: 15 }}>
-          Nimbus will lock your source funds and complete the action on {destName}. No gas, network fees, or manual bridging.
+          Nimbus will lock your source funds and complete the action on {destName}. Fees are deducted from what arrives, so no separate native gas token is required.
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -482,9 +512,17 @@ function NimbusWalletPanel({ app }) {
             <span style={{ color: NW.muted }}>Router</span>
             <span style={{ color: NW.text, fontWeight: 750 }}>{token === destToken ? 'No swap needed' : `${token} -> ${destToken}`}</span>
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+            <span style={{ color: NW.muted }}>Nimbus fee</span>
+            <span style={{ color: NW.text, fontWeight: 750 }}>1% ({nfmtUsd(nimbusFeeUsd)})</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+            <span style={{ color: NW.muted }}>Source gas</span>
+            <span style={{ color: NW.text, fontWeight: 750 }}>{nfmt(sourceGasTokenAmount, 6)} {token} ({nfmtUsd(sourceGasFeeUsd)})</span>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
             <span style={{ color: NW.muted }}>Fees and gas</span>
-            <span style={{ color: NW.green, fontWeight: 850 }}>$0.00</span>
+            <span style={{ color: NW.red, fontWeight: 850 }}>{nfmtUsd(totalFeeUsd)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 7 }}>
             <span style={{ color: NW.muted }}>Estimated time</span>
@@ -492,11 +530,17 @@ function NimbusWalletPanel({ app }) {
           </div>
         </div>
 
-        <button disabled={amt <= 0 || amt > max} onClick={startDeposit} style={{
+        {feesExceedValue && (
+          <div style={{ background: 'rgba(255,93,115,.1)', border: '1px solid rgba(255,93,115,.3)', borderRadius: 10, padding: 10, color: NW.red, fontSize: 12, marginBottom: 12 }}>
+            Amount is too small to cover Nimbus and source-chain transaction fees.
+          </div>
+        )}
+
+        <button disabled={amt <= 0 || amt > max || feesExceedValue} onClick={startDeposit} style={{
           width: '100%', height: 46, border: 'none', borderRadius: 10,
-          background: amt > 0 && amt <= max ? 'linear-gradient(135deg, #35c8f0, #9d7cff)' : NW.card,
-          color: amt > 0 && amt <= max ? '#071018' : NW.soft,
-          fontSize: 14, fontWeight: 900, cursor: amt > 0 && amt <= max ? 'pointer' : 'not-allowed',
+          background: amt > 0 && amt <= max && !feesExceedValue ? 'linear-gradient(135deg, #35c8f0, #9d7cff)' : NW.card,
+          color: amt > 0 && amt <= max && !feesExceedValue ? '#071018' : NW.soft,
+          fontSize: 14, fontWeight: 900, cursor: amt > 0 && amt <= max && !feesExceedValue ? 'pointer' : 'not-allowed',
         }}>Deposit with Nimbus</button>
       </div>
     );
@@ -515,7 +559,7 @@ function NimbusWalletPanel({ app }) {
           {fulfillDone ? 'Deposit complete' : 'Deposit in progress'}
         </div>
         <div style={{ color: NW.muted, fontSize: 12, lineHeight: 1.55, marginBottom: 15 }}>
-          {nfmt(currentTx.sourceAmount)} {currentTx.sourceToken} is routing into {nfmt(currentTx.destAmount)} {currentTx.destToken} on {appName}. Estimated completion is about {statusEstimate}s.
+          {nfmt(currentTx.sourceAmount)} {currentTx.sourceToken} is routing into {nfmt(currentTx.destAmount)} {currentTx.destToken} on {appName} after Nimbus and source-chain fees. Estimated completion is about {statusEstimate}s.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
           <NimbusProgress
@@ -535,16 +579,28 @@ function NimbusWalletPanel({ app }) {
         </div>
         <div style={{ background: '#151823', border: '1px solid ' + NW.border, borderRadius: 10, padding: 12, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+            <span style={{ color: NW.muted }}>Source value</span>
+            <span style={{ color: NW.text, fontWeight: 800 }}>{nfmtUsd(currentTx.sourceValueUsd)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
             <span style={{ color: NW.muted }}>Delivered amount</span>
             <span style={{ color: NW.text, fontWeight: 800 }}>{nfmt(currentTx.destAmount)} {currentTx.destToken}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
-            <span style={{ color: NW.muted }}>Value</span>
+            <span style={{ color: NW.muted }}>Delivered value</span>
             <span style={{ color: NW.text, fontWeight: 800 }}>{nfmtUsd(currentTx.valueUsd)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+            <span style={{ color: NW.muted }}>Nimbus fee</span>
+            <span style={{ color: NW.text, fontWeight: 800 }}>{nfmtUsd(currentTx.nimbusFeeUsd)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+            <span style={{ color: NW.muted }}>Source-chain gas</span>
+            <span style={{ color: NW.text, fontWeight: 800 }}>{nfmtUsd(currentTx.sourceGasUsd)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
             <span style={{ color: NW.muted }}>Total fees</span>
-            <span style={{ color: NW.green, fontWeight: 900 }}>$0.00</span>
+            <span style={{ color: NW.red, fontWeight: 900 }}>{nfmtUsd(currentTx.totalFeeUsd)}</span>
           </div>
         </div>
         {fulfillDone && (
