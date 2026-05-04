@@ -150,7 +150,7 @@ function TabBar({ active, onChange }) {
         { id: 'aave',     label: 'Waave',    icon: '🌊' },
         { id: 'coinbase', label: 'Coinbase', icon: '🏦' },
       ].map(tab => (
-        <button key={tab.id} onClick={() => onChange(tab.id)} style={{
+        <button key={tab.id} data-stani-target={tab.id === 'coinbase' ? 'coinbase-tab' : 'waave-tab'} onClick={() => onChange(tab.id)} style={{
           display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px', height: '100%',
           border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
           background: active === tab.id ? AM.panel : 'transparent',
@@ -177,15 +177,16 @@ function App() {
     <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: AM.bg, overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
       <TabBar active={tab} onChange={setTab} />
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div data-stani-target="waave-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
           {tab === 'aave'     && <AavePanel onAdminOpen={() => setAdminOpen(true)} />}
           {tab === 'coinbase' && <CoinbasePanel />}
         </div>
-        <div style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
+        <div data-stani-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
           <WalletPanel />
         </div>
       </div>
       <AdminPanel visible={adminOpen} onClose={() => setAdminOpen(false)} />
+      <StaniGuide mode="traditional" />
     </div>
   );
 }
