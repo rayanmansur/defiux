@@ -24,9 +24,55 @@ function NimbusHyperTabBar({ active, onChange }) {
   );
 }
 
+
+function useIsMobile() {
+  const query = '(max-width: 768px)';
+  const getMatches = () => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false);
+  const [isMobile, setIsMobile] = React.useState(getMatches);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia(query);
+    const handleChange = event => setIsMobile(event.matches);
+    setIsMobile(media.matches);
+    if (media.addEventListener) {
+      media.addEventListener('change', handleChange);
+      return () => media.removeEventListener('change', handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
+  return isMobile;
+}
+
+function NimbusHyperMobileSwitcher({ active, onChange }) {
+  const options = [
+    { id: 'dapp', label: 'HyperLivid', target: 'hyperlivid-tab' },
+    { id: 'wallet', label: 'Wallet', target: 'wallet-tab' },
+    { id: 'coinbase', label: 'Coinbase', target: 'coinbase-tab' },
+  ];
+
+  return (
+    <div style={{ padding: '10px 12px calc(10px + env(safe-area-inset-bottom))', background: '#08080c', borderTop: '1px solid #1a1a24', flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: '#13141a', border: '1px solid #1e2028', borderRadius: 14, padding: 4 }}>
+        {options.map(option => (
+          <button key={option.id} data-jeff-target={option.target} onClick={() => onChange(option.id)} style={{
+            border: 'none', borderRadius: 10, padding: '10px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            background: active === option.id ? '#35c8f0' : 'transparent',
+            color: active === option.id ? '#061014' : '#e8e8f0',
+          }}>{option.label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NimbusHyperApp() {
   const [tab, setTab] = React.useState('hyperliquid');
   const [adminOpen, setAdminOpen] = React.useState(false);
+  const [mobileScreen, setMobileScreen] = React.useState('dapp');
+  const isMobile = useIsMobile();
 
   return (
     <div style={{
@@ -34,16 +80,35 @@ function NimbusHyperApp() {
       background: '#0a0a0e', overflow: 'hidden',
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
-      <NimbusHyperTabBar active={tab} onChange={setTab} />
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        <div data-jeff-target="hyperlivid-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          {tab === 'hyperliquid' && <DAppPanel onEarnClick={() => setAdminOpen(true)} />}
-          {tab === 'coinbase' && <CoinbasePanel />}
+      {!isMobile && <NimbusHyperTabBar active={tab} onChange={setTab} />}
+      {isMobile ? (
+        <>
+          <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            {mobileScreen === 'dapp' && (
+              <div data-jeff-target="hyperlivid-dapp" style={{ height: '100%', overflow: 'hidden' }}>
+                <DAppPanel onEarnClick={() => setAdminOpen(true)} />
+              </div>
+            )}
+            {mobileScreen === 'wallet' && (
+              <div data-jeff-target="wallet-panel" style={{ height: '100%', overflow: 'hidden', background: '#171922' }}>
+                <NimbusWalletPanel app="hyperlivid" />
+              </div>
+            )}
+            {mobileScreen === 'coinbase' && <CoinbasePanel />}
+          </div>
+          <NimbusHyperMobileSwitcher active={mobileScreen} onChange={setMobileScreen} />
+        </>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          <div data-jeff-target="hyperlivid-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            {tab === 'hyperliquid' && <DAppPanel onEarnClick={() => setAdminOpen(true)} />}
+            {tab === 'coinbase' && <CoinbasePanel />}
+          </div>
+          <div data-jeff-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#171922' }}>
+            <NimbusWalletPanel app="hyperlivid" />
+          </div>
         </div>
-        <div data-jeff-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#171922' }}>
-          <NimbusWalletPanel app="hyperlivid" />
-        </div>
-      </div>
+      )}
       <NimbusScenarioSetupPanel visible={adminOpen} onClose={() => setAdminOpen(false)} app="hyperlivid" />
       <JeffGuide mode="nimbus" />
     </div>

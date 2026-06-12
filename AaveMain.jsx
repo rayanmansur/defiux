@@ -168,23 +168,88 @@ function TabBar({ active, onChange }) {
   );
 }
 
+
+function useIsMobile() {
+  const query = '(max-width: 768px)';
+  const getMatches = () => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false);
+  const [isMobile, setIsMobile] = useState(getMatches);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia(query);
+    const handleChange = event => setIsMobile(event.matches);
+    setIsMobile(media.matches);
+    if (media.addEventListener) {
+      media.addEventListener('change', handleChange);
+      return () => media.removeEventListener('change', handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
+  return isMobile;
+}
+
+function MobileSegmentedSwitcher({ active, onChange }) {
+  const options = [
+    { id: 'dapp', label: 'Waave', target: 'waave-tab' },
+    { id: 'wallet', label: 'Wallet', target: 'wallet-tab' },
+    { id: 'coinbase', label: 'Coinbase', target: 'coinbase-tab' },
+  ];
+
+  return (
+    <div style={{ padding: '10px 12px calc(10px + env(safe-area-inset-bottom))', background: '#08080c', borderTop: '1px solid #1a1a24', flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: AM.panel, border: '1px solid ' + AM.border, borderRadius: 14, padding: 4 }}>
+        {options.map(option => (
+          <button key={option.id} data-stani-target={option.target} onClick={() => onChange(option.id)} style={{
+            border: 'none', borderRadius: 10, padding: '10px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            background: active === option.id ? AM.teal : 'transparent',
+            color: active === option.id ? '#031313' : AM.text,
+          }}>{option.label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────
 function App() {
   const [tab, setTab]           = useState('aave');
   const [adminOpen, setAdminOpen] = useState(false);
+  const [mobileScreen, setMobileScreen] = useState('dapp');
+  const isMobile = useIsMobile();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: AM.bg, overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <TabBar active={tab} onChange={setTab} />
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        <div data-stani-target="waave-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          {tab === 'aave'     && <AavePanel onAdminOpen={() => setAdminOpen(true)} />}
-          {tab === 'coinbase' && <CoinbasePanel />}
+      {!isMobile && <TabBar active={tab} onChange={setTab} />}
+      {isMobile ? (
+        <>
+          <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            {mobileScreen === 'dapp' && (
+              <div data-stani-target="waave-dapp" style={{ height: '100%', overflow: 'hidden' }}>
+                <AavePanel onAdminOpen={() => setAdminOpen(true)} />
+              </div>
+            )}
+            {mobileScreen === 'wallet' && (
+              <div data-stani-target="wallet-panel" style={{ height: '100%', overflow: 'hidden', background: '#1c1c24' }}>
+                <WalletPanel />
+              </div>
+            )}
+            {mobileScreen === 'coinbase' && <CoinbasePanel />}
+          </div>
+          <MobileSegmentedSwitcher active={mobileScreen} onChange={setMobileScreen} />
+        </>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          <div data-stani-target="waave-dapp" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            {tab === 'aave'     && <AavePanel onAdminOpen={() => setAdminOpen(true)} />}
+            {tab === 'coinbase' && <CoinbasePanel />}
+          </div>
+          <div data-stani-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
+            <WalletPanel />
+          </div>
         </div>
-        <div data-stani-target="wallet-panel" style={{ width: 338, flexShrink: 0, borderLeft: '1px solid #1a1a24', background: '#1c1c24' }}>
-          <WalletPanel />
-        </div>
-      </div>
+      )}
       <AdminPanel visible={adminOpen} onClose={() => setAdminOpen(false)} />
       <StaniGuide mode="traditional" />
     </div>
